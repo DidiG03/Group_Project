@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+        }
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+        .sidebar {
+            width: 240px;
+            background-color: #1e293b;
+            padding: 20px 0;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #2c3e50;
+            transition: all 0.3s ease;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            position: relative;
+            overflow-y: auto;
+        }
+        .sidebar.collapsed {
+            width: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        .sidebar-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        .sidebar-button {
+            background-color: transparent;
+            color: #e2e8f0;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 15px;
+            text-align: left;
+            cursor: pointer;
+            font-size: 15px;
+            width: 100%;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            line-height: 1.2;
+        }
+        .sidebar-button:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            transform: translateX(3px);
+        }
+        .sidebar-button::before {
+            content: "";
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            margin-right: 10px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            opacity: 0.8;
+        }
+        .sidebar-button:nth-child(1)::before {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23e2e8f0'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6'%3E%3C/path%3E%3C/svg%3E");
+        }
+        .sidebar-button:nth-child(2)::before {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23e2e8f0'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z'%3E%3C/path%3E%3C/svg%3E");
+        }
+        .sidebar-button:nth-child(3)::before {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23e2e8f0'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z'%3E%3C/path%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M15 12a3 3 0 11-6 0 3 3 0 016 0z'%3E%3C/path%3E%3C/svg%3E");
+        }
+        .sidebar-button:nth-child(4)::before {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23e2e8f0'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z'%3E%3C/path%3E%3C/svg%3E");
+        }
+        .active-button {
+            background-color: rgba(255, 255, 255, 0.15);
+            color: #ffffff;
+            font-weight: 500;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .active-button::before {
+            opacity: 1 !important;
+        }
+        .logout-button {
+            background-color: rgba(239, 68, 68, 0.2);
+            color: #fecaca;
+            margin-top: auto;
+            width: calc(100% - 30px);
+            margin-left: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            padding: 12px 15px;
+            transition: all 0.2s ease;
+        }
+        .logout-button:hover {
+            background-color: rgba(239, 68, 68, 0.3);
+        }
+        .logout-button::before {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23fecaca'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1'%3E%3C/path%3E%3C/svg%3E");
+        }
+        .app-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 15px 20px;
+            color: white;
+            font-size: 22px;
+            font-weight: bold;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 10px;
+        }
+        .app-logo span {
+            color: #3b82f6;
+        }
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+        }
+        .menu-icon {
+            color: #2196F3;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .back-icon, .notification-icon, .profile-icon {
+            color: #2196F3;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        .settings-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .settings-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .btn-save {
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        .theme-section {
+            margin-top: 40px;
+        }
+        .theme-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .theme-buttons {
+            display: flex;
+            gap: 15px;
+        }
+        .theme-button {
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .username-display {
+            font-size: 14px;
+            color: #333;
+            margin-left: 10px;
+        }
+        .messages-container {
+            padding: 0 20px;
+            margin-bottom: 20px;
+        }
+        .message-alert {
+            padding: 12px 20px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            position: relative;
+        }
+        .message-alert.success {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            border-left: 4px solid #2e7d32;
+        }
+        .message-alert.error {
+            background-color: #ffebee;
+            color: #c62828;
+            border-left: 4px solid #c62828;
+        }
+        .message-alert.info {
+            background-color: #e3f2fd;
+            color: #0d47a1;
+            border-left: 4px solid #0d47a1;
+        }
+        .close-message {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: inherit;
+        }
+        .password-toggle {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #666;
+        }
+        .form-group {
+            position: relative;
+        }
+        .required {
+            color: #d32f2f;
+            margin-left: 5px;
+        }
+        .code-display {
+            display: flex;
+            gap: 10px;
+        }
+        .btn-copy {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 0 15px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        .helptext {
+            font-size: 12px;
+            color: #555;
+            margin-top: 5px;
+        }
+        .company-info {
+            background-color: #f9f9ff;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #e0e0ff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar" id="sidebar">
+            <div class="app-logo">
+                Health<span>Check</span>
+            </div>
+            <div class="sidebar-buttons">
+                <a href="{% url 'dashboard' %}" style="text-decoration: none; width: 100%;">
+                    <button class="sidebar-button">Dashboard</button>
+                </a>
+                <a href="{% url 'project_health' %}" style="text-decoration: none; width: 100%;">
+                    <button class="sidebar-button">Project Health</button>
+                </a>
+                <button class="sidebar-button active-button">Settings</button>
+                <a href="{% url 'chat' %}" style="text-decoration: none; width: 100%;">
+                    <button class="sidebar-button">Chat</button>
+                </a>
+            </div>
+            <a href="{% url 'logout' %}" style="text-decoration: none; margin-top: auto; display: block;" id="logout-link">
+                <button class="sidebar-button logout-button">Log Out</button>
+            </a>
+        </div>
+        <div class="main-content">
+            <div class="header">
+                <div class="header-left">
+                    <span class="menu-icon" id="toggle-sidebar">≡</span>
+                </div>
+                <div class="header-right">
+                    <span class="notification-icon">🔔</span>
+                    <span class="username-display">Welcome, 
+                        {% if user.first_name %}
+                            {{ user.first_name }} {{ user.last_name }}
+                        {% else %}
+                            {{ username }}
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+            
+            <div class="settings-container">
+                <h2 class="settings-title">Settings</h2>
+                
+                {% if messages %}
+                <div class="messages-container">
+                    {% for message in messages %}
+                    <div class="message-alert {% if message.tags %}{{ message.tags }}{% endif %}">
+                        {{ message }}
+                        <button class="close-message">&times;</button>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <form method="post" action="{% url 'settings' %}" id="settings-form">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="first_name">First Name</label>
+                        <input type="text" id="first_name" name="first_name" class="form-control" 
+                               value="{{ first_name }}" placeholder="eg. First Name">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="last_name">Last Name</label>
+                        <input type="text" id="last_name" name="last_name" class="form-control" 
+                               value="{{ last_name }}" placeholder="eg. Last Name">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="email">Email<span class="required">*</span></label>
+                        <input type="email" id="email" name="email" class="form-control" 
+                               value="{{ email }}" placeholder="eg. Email@gmail.com" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="new_password">New Password <small>(leave blank to keep current password)</small></label>
+                        <input type="password" id="new_password" name="new_password" class="form-control" 
+                               placeholder="New Password">
+                        <button type="button" class="password-toggle" id="password-toggle">👁️</button>
+                    </div>
+                    
+                    <button type="submit" class="btn-save" id="save-button">Save Changes</button>
+                </form>
+                
+                
+                {% if profile and profile.role == 'admin' %}
+                <div class="theme-section">
+                    <h3 class="theme-title">Company Information</h3>
+                    <div class="company-info">
+                        {% if company %}
+                        <div class="form-group">
+                            <label>Company Name</label>
+                            <input type="text" class="form-control" value="{{ company.name }}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Company Access Code (for team members)</label>
+                            <div class="code-display">
+                                <input type="text" class="form-control" value="{{ company.access_code }}" id="access-code" readonly>
+                                <button type="button" class="btn-copy" id="copy-code-btn">Copy</button>
+                            </div>
+                            <p class="helptext">Share this code with employees and managers who need to join your company.</p>
+                        </div>
+                        {% else %}
+                        <p>You haven't created a company yet. Create one when you sign up a new user with the admin role.</p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Sidebar toggle functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggleButton = document.getElementById('toggle-sidebar');
+            const sidebar = document.getElementById('sidebar');
+            
+            toggleButton.addEventListener('click', function() {
+                sidebar.classList.toggle('collapsed');
+            });
+            
+            // Logout confirmation
+            const logoutLink = document.getElementById('logout-link');
+            logoutLink.addEventListener('click', function(event) {
+                event.preventDefault();
+                if (confirm('Are you sure you want to log out?')) {
+                    window.location.href = this.getAttribute('href');
+                }
+            });
+            
+            // Password visibility toggle
+            const passwordToggle = document.getElementById('password-toggle');
+            const passwordField = document.getElementById('new_password');
+            
+            passwordToggle.addEventListener('click', function() {
+                if (passwordField.type === 'password') {
+                    passwordField.type = 'text';
+                    passwordToggle.textContent = '🙈';
+                } else {
+                    passwordField.type = 'password';
+                    passwordToggle.textContent = '👁️';
+                }
+            });
+            
+            // Save button confirmation
+            const saveButton = document.getElementById('save-button');
+            const passwordInput = document.getElementById('new_password');
+            
+            saveButton.addEventListener('click', function(event) {
+                if (passwordInput.value !== '') {
+                    if (!confirm('Changing your password will log you out. Continue?')) {
+                        event.preventDefault();
+                    }
+                }
+            });
+            
+            // Close message alerts
+            const closeButtons = document.querySelectorAll('.close-message');
+            closeButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    this.parentElement.style.display = 'none';
+                });
+            });
+            
+            // Auto-hide messages after 5 seconds
+            setTimeout(function() {
+                const messages = document.querySelectorAll('.message-alert');
+                messages.forEach(message => {
+                    message.style.display = 'none';
+                });
+            }, 5000);
+            
+            // Copy access code functionality
+            const copyButton = document.getElementById('copy-code-btn');
+            if (copyButton) {
+                copyButton.addEventListener('click', function() {
+                    const codeInput = document.getElementById('access-code');
+                    codeInput.select();
+                    document.execCommand('copy');
+                    
+                    // Visual feedback
+                    copyButton.textContent = 'Copied!';
+                    copyButton.style.backgroundColor = '#2E7D32';
+                    
+                    setTimeout(function() {
+                        copyButton.textContent = 'Copy';
+                        copyButton.style.backgroundColor = '#4CAF50';
+                    }, 2000);
+                });
+            }
+        });
+    </script>
+</body>
+</html> 

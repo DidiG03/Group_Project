@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+        }
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+        .sidebar {
+            width: 240px;
+            background-color: #1e293b;
+            padding: 20px 0;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #2c3e50;
+            transition: all 0.3s ease;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            position: relative;
+            overflow-y: auto;
+        }
+        .sidebar.collapsed {
+            width: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        .sidebar-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        .sidebar-button {
+            background-color: transparent;
+            color: #e2e8f0;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 15px;
+            text-align: left;
+            cursor: pointer;
+            font-size: 15px;
+            width: 100%;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            line-height: 1.2;
+        }
+        .sidebar-button:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            transform: translateX(3px);
+        }
+        .sidebar-button::before {
+            content: "";
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            margin-right: 10px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            opacity: 0.8;
+        }
+        .sidebar-button:nth-child(1)::before {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23e2e8f0'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6'%3E%3C/path%3E%3C/svg%3E");
+        }
+        .sidebar-button:nth-child(2)::before {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23e2e8f0'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z'%3E%3C/path%3E%3C/svg%3E");
+        }
+        .sidebar-button:nth-child(3)::before {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23e2e8f0'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z'%3E%3C/path%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M15 12a3 3 0 11-6 0 3 3 0 016 0z'%3E%3C/path%3E%3C/svg%3E");
+        }
+        .active-button {
+            background-color: rgba(255, 255, 255, 0.15);
+            color: #ffffff;
+            font-weight: 500;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .active-button::before {
+            opacity: 1 !important;
+        }
+        .logout-button {
+            background-color: rgba(239, 68, 68, 0.2);
+            color: #fecaca;
+            margin-top: auto;
+            width: calc(100% - 30px);
+            margin-left: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            padding: 12px 15px;
+            transition: all 0.2s ease;
+        }
+        .logout-button:hover {
+            background-color: rgba(239, 68, 68, 0.3);
+        }
+        .logout-button::before {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23fecaca'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1'%3E%3C/path%3E%3C/svg%3E");
+        }
+        .app-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 15px 20px;
+            color: white;
+            font-size: 22px;
+            font-weight: bold;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 10px;
+        }
+        .app-logo span {
+            color: #3b82f6;
+        }
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            margin-bottom: 20px;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+        }
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .notification-icon {
+            color: #2196F3;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+        }
+        .user-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background-color: #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+        }
+        .stats-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            width: 22%;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .stat-card h3 {
+            margin: 0;
+            font-size: 14px;
+            color: #666;
+            font-weight: normal;
+        }
+        .stat-card p {
+            margin: 10px 0 0;
+            font-size: 28px;
+            font-weight: bold;
+            color: #333;
+        }
+        .projects-section {
+            margin-top: 40px;
+        }
+        .section-title {
+            font-size: 20px;
+            color: #666;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .projects-grid {
+            display: flex;
+            margin-top: 30px;
+        }
+        .column {
+            flex: 1;
+            margin: 0 10px;
+        }
+        .column-header {
+            color: #6366f1;
+            padding: 10px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+        }
+        .column-header span {
+            margin-left: 5px;
+            font-size: 18px;
+        }
+        .project-item {
+            background-color: white;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+        }
+        .project-icon {
+            margin-right: 10px;
+            color: #6366f1;
+        }
+        .add-project-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            z-index: 100;
+        }
+        .add-project-btn:hover {
+            background-color: #0d8bf2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="app-logo">
+                Health<span>Check</span>
+            </div>
+            <div class="sidebar-buttons">
+                <button class="sidebar-button active-button">Dashboard</button>
+                <button class="sidebar-button" id="project-health-btn">Project Health</button>
+                <button class="sidebar-button" id="settings-btn">Settings</button>
+            </div>
+            <a href="{% url 'logout' %}" class="sidebar-button logout-button" id="logout-link">Log Out</a>
+        </div>
+
+        <!-- Main content -->
+        <div class="main-content">
+            <div class="header">
+                <div class="header-left">
+                    <button id="hamburger-menu" class="hamburger-menu">
+                        <i class="menu-icon">☰</i>
+                    </button>
+                </div>
+                <div class="header-right">
+                    <div class="notification-icon">🔔</div>
+                    <div class="user-info">
+                        <div class="user-avatar">👤</div>
+                        <span class="username-display">Welcome, {{ user.first_name }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="stats-container">
+                <div class="stat-card">
+                    <h3>Total Project</h3>
+                    <p>{{ total_projects }}</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Active Projects</h3>
+                    <p>{{ active_projects }}</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Team Member</h3>
+                    <p>{{ team_members }}</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Completed Project</h3>
+                    <p>{{ completed_projects }}</p>
+                </div>
+            </div>
+
+            <!-- Projects Section -->
+            <div class="projects-section">
+                <h2 class="section-title">Projects</h2>
+                
+                <div class="projects-grid">
+                    <div class="column">
+                        <div class="column-header">
+                            Projects <span>↓</span>
+                        </div>
+                        {% for project in projects %}
+                        <div class="project-item">
+                            <span class="project-icon">👁️</span>
+                            {{ project.name }}
+                        </div>
+                        {% empty %}
+                        <div class="project-item">
+                            No projects found
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="column">
+                        <div class="column-header">
+                            Team <span>↓</span>
+                        </div>
+                        {% for project in projects %}
+                        <div class="project-item">
+                            {{ project.team.name }}
+                        </div>
+                        {% empty %}
+                        <div class="project-item">
+                            Default Team
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="column">
+                        <div class="column-header">
+                            Department <span>↓</span>
+                        </div>
+                        {% for project in projects %}
+                        <div class="project-item">
+                            {{ project.department.name }}
+                        </div>
+                        {% empty %}
+                        <div class="project-item">
+                            General
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add Project Button -->
+            <button class="add-project-btn" id="add-project-btn">+</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Hamburger menu toggle
+            document.getElementById('hamburger-menu').addEventListener('click', function() {
+                document.querySelector('.sidebar').classList.toggle('collapsed');
+            });
+            
+            // Navigation buttons
+            document.getElementById('project-health-btn').addEventListener('click', function() {
+                window.location.href = "{% url 'project_health' %}";
+            });
+            
+            document.getElementById('settings-btn').addEventListener('click', function() {
+                window.location.href = "{% url 'settings' %}";
+            });
+            
+            // Add project button
+            document.getElementById('add-project-btn').addEventListener('click', function() {
+                window.location.href = "{% url 'add_project' %}";
+            });
+            
+            // Logout confirmation
+            const logoutLink = document.getElementById('logout-link');
+            logoutLink.addEventListener('click', function(event) {
+                event.preventDefault();
+                if (confirm('Are you sure you want to log out?')) {
+                    window.location.href = this.getAttribute('href');
+                }
+            });
+        });
+    </script>
+</body>
+</html> 

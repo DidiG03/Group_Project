@@ -1,0 +1,26 @@
+from django.urls import path
+from . import views
+from django.views.generic import RedirectView
+
+urlpatterns = [
+    path("", RedirectView.as_view(pattern_name='home'), name="root"),  # Redirect root to home
+    path("<int:id>", views.index, name="index"),
+    path("home/", views.home, name="home"),
+    path("create/", views.create, name="create"),
+    path("dashboard/", views.dashboard, name="dashboard"),
+    path("chat/", views.chat, name="chat"),
+    path("settings/", views.settings, name="settings"),
+    path("project-health/", views.project_health, name="project_health"),
+    path("save-project-health/", views.save_project_health, name="save_project_health"),
+    path("admin-dashboard/", views.admin_dashboard, name="admin_dashboard"),
+    path("admin-projects/", views.admin_projects, name="admin_projects"),
+    path("add-project/", views.add_project, name="add_project"),
+    path("get-project-comments/<int:project_id>/", views.get_project_comments, name="get_project_comments"),
+    path("approve-employee/<int:user_id>/", views.approve_employee, name="approve_employee"),
+    path("reject-employee/<int:user_id>/", views.reject_employee, name="reject_employee"),
+    path("approve-project/<int:project_id>/", views.approve_project, name="approve_project"),
+    path("reject-project/<int:project_id>/", views.reject_project, name="reject_project"),
+    path("delete-user/<int:user_id>/", views.delete_user, name="delete_user"),
+    path("add-comment-reply/", views.add_comment_reply, name="add_comment_reply"),
+    path("logout/", views.logout_view, name="logout"),  # Custom logout view
+]
