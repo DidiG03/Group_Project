@@ -1,5 +1,9 @@
 from django.contrib import admin
-from . models import ToDoList, Item
+from django.contrib.auth.models import User
+
+from .models import Department, Team
+
 # Register your models here.
-admin.site.register(ToDoList)
-admin.site.register(Item)
+admin.site.register(Department)
+admin.site.register(Team)
+
