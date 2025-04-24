@@ -155,12 +155,8 @@ The application will be available at http://127.0.0.1:8000/
   - User profiles
   - Company registration
 
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## Contributors
 
-- [Your Name](https://github.com/yourusername)
-- [Contributor 1](https://github.com/contributor1)
-- [Contributor 2](https://github.com/contributor2)
+- Sefrid Kapllani
+- Fattouh Mohammed
