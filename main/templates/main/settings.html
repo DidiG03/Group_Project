@@ -367,13 +367,49 @@
                     </div>
                     
                     <div class="form-group">
+                        <label for="role">Professional Role</label>
+                        <select id="role" name="role" class="form-control">
+                            <option value="">-- Select Your Role --</option>
+                            <option value="software_engineer" {% if profile.technical_role == 'software_engineer' %}selected{% endif %}>Software Engineer</option>
+                            <option value="frontend_developer" {% if profile.technical_role == 'frontend_developer' %}selected{% endif %}>Frontend Developer</option>
+                            <option value="backend_developer" {% if profile.technical_role == 'backend_developer' %}selected{% endif %}>Backend Developer</option>
+                            <option value="fullstack_developer" {% if profile.technical_role == 'fullstack_developer' %}selected{% endif %}>Full Stack Developer</option>
+                            <option value="mobile_developer" {% if profile.technical_role == 'mobile_developer' %}selected{% endif %}>Mobile Developer</option>
+                            <option value="web_developer" {% if profile.technical_role == 'web_developer' %}selected{% endif %}>Web Developer</option>
+                            <option value="data_scientist" {% if profile.technical_role == 'data_scientist' %}selected{% endif %}>Data Scientist</option>
+                            <option value="data_engineer" {% if profile.technical_role == 'data_engineer' %}selected{% endif %}>Data Engineer</option>
+                            <option value="data_analyst" {% if profile.technical_role == 'data_analyst' %}selected{% endif %}>Data Analyst</option>
+                            <option value="devops_engineer" {% if profile.technical_role == 'devops_engineer' %}selected{% endif %}>DevOps Engineer</option>
+                            <option value="sre" {% if profile.technical_role == 'sre' %}selected{% endif %}>Site Reliability Engineer</option>
+                            <option value="qa_engineer" {% if profile.technical_role == 'qa_engineer' %}selected{% endif %}>QA Engineer</option>
+                            <option value="test_engineer" {% if profile.technical_role == 'test_engineer' %}selected{% endif %}>Test Engineer</option>
+                            <option value="ui_designer" {% if profile.technical_role == 'ui_designer' %}selected{% endif %}>UI Designer</option>
+                            <option value="ux_designer" {% if profile.technical_role == 'ux_designer' %}selected{% endif %}>UX Designer</option>
+                            <option value="product_manager" {% if profile.technical_role == 'product_manager' %}selected{% endif %}>Product Manager</option>
+                            <option value="project_manager" {% if profile.technical_role == 'project_manager' %}selected{% endif %}>Project Manager</option>
+                            <option value="scrum_master" {% if profile.technical_role == 'scrum_master' %}selected{% endif %}>Scrum Master</option>
+                            <option value="agile_coach" {% if profile.technical_role == 'agile_coach' %}selected{% endif %}>Agile Coach</option>
+                            <option value="system_administrator" {% if profile.technical_role == 'system_administrator' %}selected{% endif %}>System Administrator</option>
+                            <option value="network_engineer" {% if profile.technical_role == 'network_engineer' %}selected{% endif %}>Network Engineer</option>
+                            <option value="security_engineer" {% if profile.technical_role == 'security_engineer' %}selected{% endif %}>Security Engineer</option>
+                            <option value="database_administrator" {% if profile.technical_role == 'database_administrator' %}selected{% endif %}>Database Administrator</option>
+                            <option value="cloud_architect" {% if profile.technical_role == 'cloud_architect' %}selected{% endif %}>Cloud Architect</option>
+                            <option value="solutions_architect" {% if profile.technical_role == 'solutions_architect' %}selected{% endif %}>Solutions Architect</option>
+                            <option value="technical_lead" {% if profile.technical_role == 'technical_lead' %}selected{% endif %}>Technical Lead</option>
+                            <option value="engineering_manager" {% if profile.technical_role == 'engineering_manager' %}selected{% endif %}>Engineering Manager</option>
+                            <option value="cto" {% if profile.technical_role == 'cto' %}selected{% endif %}>CTO</option>
+                            <option value="other" {% if profile.technical_role == 'other' %}selected{% endif %}>Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
                         <label for="new_password">New Password <small>(leave blank to keep current password)</small></label>
                         <input type="password" id="new_password" name="new_password" class="form-control" 
                                placeholder="New Password">
                         <button type="button" class="password-toggle" id="password-toggle">👁️</button>
                     </div>
                     
-                    <button type="submit" class="btn-save" id="save-button">Save Changes</button>
+                    <button type="submit" class="btn-save" id="save-button" style="background-color: #2196F3; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Save Changes</button>
                 </form>
                 
                 

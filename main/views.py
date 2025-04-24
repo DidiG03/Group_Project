@@ -18,7 +18,6 @@ def admin_required(view_func):
     @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
         try:
-            from register.models import UserProfile
             profile = UserProfile.objects.get(user=request.user)
             if profile.role == 'admin':
                 return view_func(request, *args, **kwargs)
@@ -34,7 +33,6 @@ def non_admin_required(view_func):
     @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
         try:
-            from register.models import UserProfile
             profile = UserProfile.objects.get(user=request.user)
             if profile.role != 'admin':
                 return view_func(request, *args, **kwargs)
@@ -180,6 +178,7 @@ def settings(request):
             last_name = request.POST.get('last_name', '')
             email = request.POST.get('email', '')
             new_password = request.POST.get('new_password', '')
+            technical_role = request.POST.get('role', '')
             
             # Update user profile
             user.first_name = first_name
@@ -194,6 +193,15 @@ def settings(request):
             
             user.save()
             
+            # Update technical role if profile exists
+            try:
+                profile = UserProfile.objects.get(user=user)
+                if technical_role:
+                    profile.technical_role = technical_role
+                    profile.save()
+            except UserProfile.DoesNotExist:
+                pass
+            
             # If the password was not changed, display success message
             if not new_password:
                 messages.success(request, "Profile information updated successfully!")
@@ -204,7 +212,6 @@ def settings(request):
     
     # Try to get user profile information
     try:
-        from register.models import UserProfile, Company
         profile = UserProfile.objects.get(user=user)
         
         # If admin, get company information
@@ -224,7 +231,10 @@ def settings(request):
         'username': user.username,
         'user': user,
         'profile': profile,
-        'company': company
+        'company': company,
+        'first_name': user.first_name,
+        'last_name': user.last_name,
+        'email': user.email,
     }
     
     return render(request, "main/settings.html", context)
@@ -476,7 +486,6 @@ def admin_dashboard(request):
     users = User.objects.all()
     
     # Get user profiles
-    from register.models import UserProfile, Company
     user_profiles = UserProfile.objects.select_related('user', 'company').all()
     
     # Get pending employee approvals for companies where this admin is the creator
@@ -531,11 +540,9 @@ def admin_projects(request):
     projects = Project.objects.select_related('created_by', 'team', 'department').all().order_by('-created_at')
     
     # Get user profiles for team assignments
-    from register.models import UserProfile
     user_profiles = UserProfile.objects.exclude(role='admin').select_related('user').all()
     
     # Get existing comments
-    from .models import ProjectComment
     comments = ProjectComment.objects.select_related('project', 'user').all().order_by('-created_at')
     
     # Handle comment form submission
@@ -811,7 +818,6 @@ def add_comment_reply(request):
             comment = ProjectComment.objects.get(id=comment_id)
             
             # Create the reply
-            from .models import CommentReply
             reply = CommentReply.objects.create(
                 comment=comment,
                 user=request.user,
