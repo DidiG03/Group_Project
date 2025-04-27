@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
-from .models import ToDoList, Item, Project, Department, Team, ProjectComment, CommentReply, TeamJoinRequest
+from .models import ToDoList, Item, Project, Department, Team, ProjectComment, CommentReply
 from .forms import CreateNewList
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
