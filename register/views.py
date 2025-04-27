@@ -3,6 +3,7 @@ from django.contrib import messages
 from .forms import RegisterForm
 from .models import UserProfile
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import login as auth_login
 
 # Create your views here.
 def register(response):
@@ -10,7 +11,9 @@ def register(response):
         form = RegisterForm(response.POST)
         if form.is_valid():
             user = form.save()
-            messages.success(response, "Account created successfully! You can now log in.")
+            # Log the user in after successful registration
+            auth_login(response, user)
+            messages.success(response, "Account created successfully!")
             
             # Redirect based on user role
             if user.profile.role == 'admin':
@@ -18,7 +21,7 @@ def register(response):
             else:
                 # For employees, show a message that their account needs approval
                 messages.info(response, "Your account has been created and is awaiting admin approval.")
-                return redirect("login")
+                return redirect("waiting_approval")
         else:
             # If there are form errors, render the custom template with form data
             context = {

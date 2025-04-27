@@ -23,4 +23,11 @@ urlpatterns = [
     path("delete-user/<int:user_id>/", views.delete_user, name="delete_user"),
     path("add-comment-reply/", views.add_comment_reply, name="add_comment_reply"),
     path("logout/", views.logout_view, name="logout"),  # Custom logout view
+    
+    # New team-related URLs
+    path("create-team/", views.create_team, name="create_team"),
+    path("create-department/", views.create_department, name="create_department"),
+    path("request-team-join/", views.request_team_join, name="request_team_join"),
+    path("approve-team-request/<int:request_id>/", views.approve_team_request, name="approve_team_request"),
+    path("reject-team-request/<int:request_id>/", views.reject_team_request, name="reject_team_request"),
 ]

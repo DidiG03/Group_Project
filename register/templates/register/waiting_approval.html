@@ -4,83 +4,55 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Waiting for Approval</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
     <style>
         body {
-            background-color: #f8f9fa;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
+            background-color: #ffffff;
+            font-family: Arial, sans-serif;
         }
-        .card {
-            width: 100%;
-            max-width: 500px;
+        .approval-card {
+            max-width: 600px;
+            margin: 100px auto;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
             border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            padding: 30px;
-            text-align: center;
         }
-        .pending-icon {
-            font-size: 60px;
+        .card-header {
+            background-color: #ffc107;
+            color: white;
+            padding: 20px;
+            border-radius: 8px 8px 0 0;
+        }
+        .clock-icon {
+            font-size: 64px;
             color: #ffc107;
-            margin-bottom: 20px;
-        }
-        .card-title {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 15px;
-        }
-        .btn-primary {
-            background-color: #007bff;
-            border: none;
-            border-radius: 4px;
-            padding: 10px 20px;
-            margin-top: 20px;
-        }
-        .waiting-info {
             margin: 20px 0;
-            color: #666;
         }
     </style>
 </head>
 <body>
-    <div class="card">
-        <div class="pending-icon">⏳</div>
-        <h2 class="card-title">Account Pending Approval</h2>
-        
-        {% if messages %}
-        <div class="alert alert-info mb-4">
-            {% for message in messages %}
-                {{ message }}
-            {% endfor %}
+    <div class="container">
+        <div class="approval-card card">
+            <div class="card-header">
+                <h3 class="text-center">Account Pending Approval</h3>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <div class="clock-icon">⏳</div>
+                </div>
+                <h4 class="text-center">Your account is waiting for admin approval</h4>
+                <p class="text-center">
+                    Thank you for registering! Your account has been created but requires approval from an administrator 
+                    before you can access the system. Please check back later or contact your administrator.
+                </p>
+                <div class="text-center mt-4">
+                    <a href="{% url 'login' %}" class="btn btn-primary">Return to Login</a>
+                </div>
+            </div>
         </div>
-        {% endif %}
-        
-        <p>Thank you for registering! Your account is currently pending approval by an administrator.</p>
-        
-        <div class="waiting-info">
-            <p>Your registration details:</p>
-            <ul class="list-group">
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <strong>Username:</strong> {{ user.username }}
-                </li>
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <strong>Name:</strong> {{ user.first_name }} {{ user.last_name }}
-                </li>
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <strong>Company:</strong> {{ profile.company.name }}
-                </li>
-            </ul>
-        </div>
-        
-        <p>Please check back later or wait for an email notification when your account has been approved.</p>
-        
-        <a href="{% url 'logout' %}" class="btn btn-primary">Log Out</a>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.14.7/dist/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
 </body>
 </html> 

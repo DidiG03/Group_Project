@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
-from .models import ToDoList, Item, Project, Department, Team, ProjectComment, CommentReply
+from .models import ToDoList, Item, Project, Department, Team, ProjectComment, CommentReply, TeamJoinRequest
 from .forms import CreateNewList
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -12,6 +12,7 @@ from django.core.exceptions import PermissionDenied
 from register.models import UserProfile, Company
 import os
 from django.contrib.auth import logout as auth_logout
+from django.utils import timezone
 
 # Create role-based decorators
 def admin_required(view_func):
@@ -109,11 +110,28 @@ def dashboard(request):
         if not profile.is_approved and profile.role == 'employee':
             messages.warning(request, "Your account is still pending approval from an administrator.")
             return redirect('waiting_approval')
+            
+        # Check if user has a technical role set
+        if not profile.technical_role:
+            messages.warning(request, "Please set your professional role in settings to create projects and use all features.")
     except UserProfile.DoesNotExist:
         pass
     
-    # Get projects data - only show approved projects
-    projects = Project.objects.filter(is_approved=True).order_by('-created_at')
+    # Get user's teams
+    user_teams = []
+    if hasattr(request.user, 'profile'):
+        user_teams = request.user.profile.teams.all()
+    
+    # Get projects data - only show approved projects for the user's teams
+    if user_teams:
+        # If user has teams, show projects from those teams
+        projects = Project.objects.filter(
+            is_approved=True,
+            team__in=user_teams
+        ).order_by('-created_at').distinct()
+    else:
+        # If user has no teams, show all approved projects
+        projects = Project.objects.filter(is_approved=True).order_by('-created_at')
     
     # Get user's pending projects
     pending_projects = Project.objects.filter(
@@ -141,19 +159,20 @@ def dashboard(request):
         teams = Team.objects.all()
         departments = Department.objects.all()
     
-    # Get current user's username to display in the dashboard
     context = {
-        'username': request.user.username,
         'user': request.user,
         'projects': projects,
         'pending_projects': pending_projects,
-        'teams': teams,
-        'departments': departments,
         'total_projects': total_projects,
         'active_projects': active_projects,
         'completed_projects': completed_projects,
-        'team_members': team_members
+        'team_members': team_members,
+        'teams': teams,
+        'departments': departments,
+        'user_teams': user_teams,  # Pass user teams to template
+        'has_technical_role': hasattr(request.user, 'profile') and request.user.profile.technical_role, # Add flag for technical role
     }
+    
     return render(request, "main/dashboard.html", context)
 
 # Add chat view - protected route
@@ -180,6 +199,9 @@ def settings(request):
             new_password = request.POST.get('new_password', '')
             technical_role = request.POST.get('role', '')
             
+            # Get selected teams (returns a list of team ids)
+            team_ids = request.POST.getlist('teams')
+            
             # Update user profile
             user.first_name = first_name
             user.last_name = last_name
@@ -193,12 +215,19 @@ def settings(request):
             
             user.save()
             
-            # Update technical role if profile exists
+            # Update technical role and teams if profile exists
             try:
                 profile = UserProfile.objects.get(user=user)
                 if technical_role:
                     profile.technical_role = technical_role
-                    profile.save()
+                
+                # Update teams (clear existing teams and add selected ones)
+                profile.teams.clear()
+                if team_ids:
+                    teams = Team.objects.filter(id__in=team_ids)
+                    profile.teams.add(*teams)
+                
+                profile.save()
             except UserProfile.DoesNotExist:
                 pass
             
@@ -226,6 +255,18 @@ def settings(request):
         profile = None
         company = None
     
+    # Get all teams for the multi-select dropdown
+    teams = Team.objects.all()
+    
+    # Get teams available for joining (exclude teams the user is already part of)
+    user_teams = []
+    if profile:
+        user_teams = profile.teams.all()
+    available_teams = Team.objects.exclude(id__in=[team.id for team in user_teams])
+    
+    # Get pending team join requests
+    pending_requests = TeamJoinRequest.objects.filter(user=user, status='pending')
+    
     # Render the settings template with context
     context = {
         'username': user.username,
@@ -235,6 +276,9 @@ def settings(request):
         'first_name': user.first_name,
         'last_name': user.last_name,
         'email': user.email,
+        'teams': teams,  # Pass all teams to the template
+        'available_teams': available_teams,  # Teams available for joining
+        'pending_requests': pending_requests,  # Pending team join requests
     }
     
     return render(request, "main/settings.html", context)
@@ -277,6 +321,16 @@ def save_settings(request):
 @login_required
 @non_admin_required
 def project_health(request):
+    # Check if user has a technical role
+    try:
+        user_profile = UserProfile.objects.get(user=request.user)
+        if not user_profile.technical_role:
+            messages.warning(request, "You need to select a professional role in your settings before accessing project health features.")
+            return redirect('settings')
+    except UserProfile.DoesNotExist:
+        messages.error(request, "User profile not found.")
+        return redirect('dashboard')
+
     # Get all projects for the dropdown
     projects = Project.objects.all().order_by('name')
     
@@ -310,6 +364,16 @@ def project_health(request):
 @non_admin_required
 def save_project_health(request):
     """Handle form submission to save project health updates"""
+    # Check if user has a technical role
+    try:
+        user_profile = UserProfile.objects.get(user=request.user)
+        if not user_profile.technical_role:
+            messages.warning(request, "You need to select a professional role in your settings before updating project health.")
+            return redirect('settings')
+    except UserProfile.DoesNotExist:
+        messages.error(request, "User profile not found.")
+        return redirect('dashboard')
+        
     if request.method == "POST":
         try:
             # Get form data
@@ -404,6 +468,16 @@ def save_project_health(request):
 @non_admin_required
 def add_project(request):
     """Handle form submission to add a new project"""
+    # Check if user has a technical role
+    try:
+        user_profile = UserProfile.objects.get(user=request.user)
+        if not user_profile.technical_role:
+            messages.warning(request, "You need to select a professional role in your settings before creating projects.")
+            return redirect('settings')
+    except UserProfile.DoesNotExist:
+        messages.error(request, "User profile not found.")
+        return redirect('dashboard')
+            
     # Get teams and departments for the form dropdown
     teams = Team.objects.all()
     departments = Department.objects.all()
@@ -483,45 +557,35 @@ def add_project(request):
 @admin_required
 def admin_dashboard(request):
     # Get all users
-    users = User.objects.all()
+    user_profiles = UserProfile.objects.all().select_related('user', 'company')
     
-    # Get user profiles
-    user_profiles = UserProfile.objects.select_related('user', 'company').all()
-    
-    # Get pending employee approvals for companies where this admin is the creator
-    admin_companies = Company.objects.filter(created_by=request.user)
-    pending_approvals = UserProfile.objects.filter(
-        company__in=admin_companies,
-        is_approved=False
-    ).exclude(user=request.user).select_related('user', 'company').order_by('company__name')
-    
-    # Count of pending approvals
-    pending_count = pending_approvals.count()
-    
-    # Get projects data
-    projects = Project.objects.select_related('created_by', 'team', 'department').all()
-    
-    # Get pending project approvals
-    company_employees = UserProfile.objects.filter(company__in=admin_companies).values_list('user_id', flat=True)
-    pending_projects = Project.objects.filter(
-        created_by_id__in=company_employees,
-        is_approved=False
-    ).select_related('created_by', 'team', 'department').order_by('-created_at')
-    
-    # Count of pending project approvals
-    pending_projects_count = pending_projects.count()
-    
-    # Get stats
-    total_users = User.objects.count()
+    # Count all users and projects
+    total_users = user_profiles.count()
     total_projects = Project.objects.count()
     active_projects = Project.objects.filter(status='active').count()
     
+    # Get pending employee approvals
+    pending_approvals = UserProfile.objects.filter(is_approved=False)
+    pending_count = pending_approvals.count()
+    
+    # Get pending project approvals
+    pending_projects = Project.objects.filter(is_approved=False)
+    pending_projects_count = pending_projects.count()
+    
+    # Get all projects
+    projects = Project.objects.all()
+    
+    # Get all teams and departments
+    teams = Team.objects.all().select_related('department').prefetch_related('team_members')
+    departments = Department.objects.all()
+    
+    # Get pending team join requests
+    pending_team_requests = TeamJoinRequest.objects.filter(status='pending').select_related('user', 'team')
+    pending_team_requests_count = pending_team_requests.count()
+    
     context = {
-        'username': request.user.username,
         'user': request.user,
-        'users': users,
         'user_profiles': user_profiles,
-        'projects': projects,
         'total_users': total_users,
         'total_projects': total_projects,
         'active_projects': active_projects,
@@ -529,7 +593,13 @@ def admin_dashboard(request):
         'pending_count': pending_count,
         'pending_projects': pending_projects,
         'pending_projects_count': pending_projects_count,
+        'projects': projects,
+        'teams': teams,
+        'departments': departments,
+        'pending_team_requests': pending_team_requests,
+        'pending_team_requests_count': pending_team_requests_count,
     }
+    
     return render(request, "main/admin_dashboard.html", context)
 
 # Add admin projects view - protected route
@@ -838,5 +908,174 @@ def add_comment_reply(request):
 def logout_view(request):
     auth_logout(request)
     return redirect('login')
+
+# Add view to create a new team
+@login_required
+@admin_required
+def create_team(request):
+    if request.method == "POST":
+        try:
+            # Get form data
+            name = request.POST.get('team_name')
+            code = request.POST.get('team_code')
+            department_id = request.POST.get('department')
+            
+            # Validate data
+            if not name or not code or not department_id:
+                messages.error(request, "All fields are required")
+                return redirect('admin_dashboard')
+            
+            # Check if team code already exists
+            if Team.objects.filter(code=code).exists():
+                messages.error(request, f"Team code '{code}' already exists")
+                return redirect('admin_dashboard')
+                
+            # Get department
+            department = Department.objects.get(id=department_id)
+            
+            # Create the team
+            team = Team.objects.create(
+                name=name,
+                code=code,
+                department=department
+            )
+            
+            messages.success(request, f"Team '{name}' has been created successfully!")
+            
+        except Exception as e:
+            messages.error(request, f"Error creating team: {str(e)}")
+            
+    return redirect('admin_dashboard')
+
+# Add view for requesting to join a team
+@login_required
+def request_team_join(request):
+    if request.method == "POST":
+        try:
+            team_id = request.POST.get('team_id')
+            
+            # Validate data
+            if not team_id:
+                messages.error(request, "Team selection is required")
+                return redirect('settings')
+            
+            # Check if user has a technical role
+            profile = UserProfile.objects.get(user=request.user)
+            if not profile.technical_role:
+                messages.error(request, "You must select a professional role before requesting to join a team")
+                return redirect('settings')
+            
+            # Get the team
+            team = Team.objects.get(id=team_id)
+            
+            # Check if user is already in the team
+            if team in profile.teams.all():
+                messages.info(request, f"You are already a member of '{team.name}'")
+                return redirect('settings')
+                
+            # Check if a request is already pending
+            if TeamJoinRequest.objects.filter(user=request.user, team=team, status='pending').exists():
+                messages.info(request, f"You already have a pending request to join '{team.name}'")
+                return redirect('settings')
+                
+            # Create the request
+            TeamJoinRequest.objects.create(
+                user=request.user,
+                team=team
+            )
+            
+            messages.success(request, f"Your request to join '{team.name}' has been submitted and is pending approval.")
+            
+        except Team.DoesNotExist:
+            messages.error(request, "Team not found")
+        except UserProfile.DoesNotExist:
+            messages.error(request, "User profile not found")
+        except Exception as e:
+            messages.error(request, f"Error submitting request: {str(e)}")
+            
+    return redirect('settings')
+
+# Add view for approving a team join request
+@login_required
+@admin_required
+def approve_team_request(request, request_id):
+    if request.method == "POST":
+        try:
+            # Get the join request
+            join_request = TeamJoinRequest.objects.get(id=request_id, status='pending')
+            
+            # Update the request status
+            join_request.status = 'approved'
+            join_request.approved_at = timezone.now()
+            join_request.approved_by = request.user
+            join_request.save()
+            
+            # Add user to the team
+            profile = join_request.user.profile
+            profile.teams.add(join_request.team)
+            
+            messages.success(request, f"{join_request.user.first_name} {join_request.user.last_name} has been added to '{join_request.team.name}'.")
+            
+        except TeamJoinRequest.DoesNotExist:
+            messages.error(request, "Join request not found or already processed")
+        except Exception as e:
+            messages.error(request, f"Error approving request: {str(e)}")
+            
+    return redirect('admin_dashboard')
+
+# Add view for rejecting a team join request
+@login_required
+@admin_required
+def reject_team_request(request, request_id):
+    if request.method == "POST":
+        try:
+            # Get the join request
+            join_request = TeamJoinRequest.objects.get(id=request_id, status='pending')
+            
+            # Update the request status
+            join_request.status = 'rejected'
+            join_request.save()
+            
+            messages.success(request, f"Request from {join_request.user.first_name} {join_request.user.last_name} to join '{join_request.team.name}' has been rejected.")
+            
+        except TeamJoinRequest.DoesNotExist:
+            messages.error(request, "Join request not found or already processed")
+        except Exception as e:
+            messages.error(request, f"Error rejecting request: {str(e)}")
+            
+    return redirect('admin_dashboard')
+
+# Add view to create a new department
+@login_required
+@admin_required
+def create_department(request):
+    if request.method == "POST":
+        try:
+            # Get form data
+            name = request.POST.get('department_name')
+            code = request.POST.get('department_code')
+            
+            # Validate data
+            if not name or not code:
+                messages.error(request, "All fields are required")
+                return redirect('admin_dashboard')
+            
+            # Check if department code already exists
+            if Department.objects.filter(code=code).exists():
+                messages.error(request, f"Department code '{code}' already exists")
+                return redirect('admin_dashboard')
+                
+            # Create the department
+            department = Department.objects.create(
+                name=name,
+                code=code
+            )
+            
+            messages.success(request, f"Department '{name}' has been created successfully!")
+            
+        except Exception as e:
+            messages.error(request, f"Error creating department: {str(e)}")
+            
+    return redirect('admin_dashboard')
 
 

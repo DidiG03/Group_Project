@@ -61,18 +61,27 @@ class RegisterForm(UserCreationForm):
                     name=self.cleaned_data['company_name'],
                     created_by=user
                 )
+                
+                # Create a user profile - admins are automatically approved
+                UserProfile.objects.create(
+                    user=user,
+                    role=role,
+                    company=company,
+                    is_approved=True  # Auto-approve admin users
+                )
             else:
                 # For employees, use the existing company
                 company = Company.objects.get(
                     name=self.cleaned_data['company_name'],
                     access_code=self.cleaned_data['company_code']
                 )
-            
-            # Create a user profile
-            UserProfile.objects.create(
-                user=user,
-                role=role,  # Use the selected role
-                company=company
-            )
+                
+                # Create a user profile - employees need approval
+                UserProfile.objects.create(
+                    user=user,
+                    role=role,
+                    company=company
+                    # is_approved defaults to False for employees
+                )
             
         return user

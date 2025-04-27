@@ -245,6 +245,94 @@
         .add-project-btn:hover {
             background-color: #0d8bf2;
         }
+        .projects-table {
+            margin-top: 20px;
+            overflow-x: auto;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .project-table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+        }
+        .project-table th, 
+        .project-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        .project-table th {
+            background-color: #f8f9fa;
+            color: #666;
+            font-weight: 500;
+            position: sticky;
+            top: 0;
+        }
+        .project-row:hover {
+            background-color: #f8f9fc;
+        }
+        .project-row.completed {
+            background-color: #f0fff4;
+        }
+        .project-row.on-hold {
+            background-color: #fffbeb;
+        }
+        .project-row.cancelled {
+            background-color: #fff1f1;
+        }
+        .status-badge, .health-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            display: inline-block;
+        }
+        .status-active {
+            background-color: #e6f7ff;
+            color: #0066cc;
+        }
+        .status-completed, .status-completed_early {
+            background-color: #e6ffed;
+            color: #018749;
+        }
+        .status-on_hold {
+            background-color: #fff7e6;
+            color: #d87900;
+        }
+        .status-cancelled {
+            background-color: #fff1f0;
+            color: #d42a2a;
+        }
+        .health-good {
+            background-color: #e6ffed;
+            color: #018749;
+        }
+        .health-needs_work {
+            background-color: #fff7e6;
+            color: #d87900;
+        }
+        .health-poor {
+            background-color: #fff1f0;
+            color: #d42a2a;
+        }
+        .empty-projects {
+            text-align: center;
+            color: #888;
+            padding: 20px;
+        }
+        .team-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            display: inline-block;
+        }
+        .my-team {
+            background-color: #e6f7ff;
+            color: #0066cc;
+            border: 1px solid #b3d9ff;
+        }
     </style>
 </head>
 <body>
@@ -290,8 +378,8 @@
                     <p>{{ active_projects }}</p>
                 </div>
                 <div class="stat-card">
-                    <h3>Team Member</h3>
-                    <p>{{ team_members }}</p>
+                    <h3>My Teams</h3>
+                    <p>{{ user_teams.count }}</p>
                 </div>
                 <div class="stat-card">
                     <h3>Completed Project</h3>
@@ -303,57 +391,70 @@
             <div class="projects-section">
                 <h2 class="section-title">Projects</h2>
                 
-                <div class="projects-grid">
-                    <div class="column">
-                        <div class="column-header">
-                            Projects <span>↓</span>
-                        </div>
-                        {% for project in projects %}
-                        <div class="project-item">
-                            <span class="project-icon">👁️</span>
-                            {{ project.name }}
-                        </div>
-                        {% empty %}
-                        <div class="project-item">
-                            No projects found
-                        </div>
-                        {% endfor %}
-                    </div>
-                    
-                    <div class="column">
-                        <div class="column-header">
-                            Team <span>↓</span>
-                        </div>
-                        {% for project in projects %}
-                        <div class="project-item">
-                            {{ project.team.name }}
-                        </div>
-                        {% empty %}
-                        <div class="project-item">
-                            Default Team
-                        </div>
-                        {% endfor %}
-                    </div>
-                    
-                    <div class="column">
-                        <div class="column-header">
-                            Department <span>↓</span>
-                        </div>
-                        {% for project in projects %}
-                        <div class="project-item">
-                            {{ project.department.name }}
-                        </div>
-                        {% empty %}
-                        <div class="project-item">
-                            General
-                        </div>
-                        {% endfor %}
-                    </div>
+                {% if not has_technical_role %}
+                <div style="margin-bottom: 20px; padding: 15px; background-color: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">
+                    <h4 style="margin-top: 0; color: #856404;">Professional Role Required</h4>
+                    <p style="margin-bottom: 5px;">You need to select a professional role in your settings before you can create projects or use all features.</p>
+                    <a href="{% url 'settings' %}" class="btn" style="background-color: #ffc107; color: #212529; padding: 6px 12px; text-decoration: none; border-radius: 4px; display: inline-block; margin-top: 10px;">Set Professional Role</a>
+                </div>
+                {% endif %}
+                
+                <div class="projects-table">
+                    <table class="project-table">
+                        <thead>
+                            <tr>
+                                <th>Project Name</th>
+                                <th>Team</th>
+                                <th>Department</th>
+                                <th>Status</th>
+                                <th>Health</th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for project in projects %}
+                            <tr class="project-row {% if project.status == 'completed' %}completed{% elif project.status == 'on_hold' %}on-hold{% elif project.status == 'cancelled' %}cancelled{% endif %}">
+                                <td><span class="project-icon">👁️</span> {{ project.name }}</td>
+                                <td>
+                                    <span class="team-badge {% if project.team in user_teams %}my-team{% endif %}">
+                                        {{ project.team.name }}
+                                    </span>
+                                </td>
+                                <td>{{ project.department.name }}</td>
+                                <td>
+                                    <span class="status-badge status-{{ project.status }}">
+                                        {% if project.status == 'active' %}Active
+                                        {% elif project.status == 'completed' %}Completed
+                                        {% elif project.status == 'on_hold' %}On Hold
+                                        {% elif project.status == 'cancelled' %}Cancelled
+                                        {% elif project.status == 'completed_early' %}Completed Early
+                                        {% endif %}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="health-badge health-{{ project.health }}">
+                                        {% if project.health == 'good' %}Good
+                                        {% elif project.health == 'needs_work' %}Needs Work
+                                        {% elif project.health == 'poor' %}Poor
+                                        {% endif %}
+                                    </span>
+                                </td>
+                                <td>{{ project.start_date }}</td>
+                                <td>{% if project.end_date %}{{ project.end_date }}{% else %}-{% endif %}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="7" class="empty-projects">No projects found</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
             <!-- Add Project Button -->
-            <button class="add-project-btn" id="add-project-btn">+</button>
+            <button class="add-project-btn" id="add-project-btn" {% if not has_technical_role %}title="Set a professional role in settings first" style="background-color: #ccc; cursor: not-allowed;"{% endif %}>+</button>
         </div>
     </div>
 
@@ -375,7 +476,12 @@
             
             // Add project button
             document.getElementById('add-project-btn').addEventListener('click', function() {
+                {% if has_technical_role %}
                 window.location.href = "{% url 'add_project' %}";
+                {% else %}
+                alert('You need to set a professional role in your settings before you can create projects.');
+                window.location.href = "{% url 'settings' %}";
+                {% endif %}
             });
             
             // Logout confirmation

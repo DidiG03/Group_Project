@@ -88,3 +88,23 @@ class CommentReply(models.Model):
     
     def __str__(self):
         return f"Reply by {self.user.username} to comment {self.comment.id}"
+
+class TeamJoinRequest(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="team_requests")
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name="join_requests")
+    requested_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    approved_at = models.DateTimeField(null=True, blank=True)
+    approved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="approved_team_requests")
+    
+    class Meta:
+        unique_together = ('user', 'team')
+        
+    def __str__(self):
+        return f"{self.user.username}'s request to join {self.team.name} ({self.get_status_display()})"

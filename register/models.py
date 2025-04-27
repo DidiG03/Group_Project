@@ -73,7 +73,7 @@ class UserProfile(models.Model):
     phone = models.CharField(max_length=50, blank=True, null=True)
     position = models.CharField(max_length=100, blank=True, null=True)
     department = models.ForeignKey('main.Department', on_delete=models.SET_NULL, null=True, blank=True, related_name="employees")
-    team = models.ForeignKey('main.Team', on_delete=models.SET_NULL, null=True, blank=True, related_name="employees")
+    teams = models.ManyToManyField('main.Team', blank=True, related_name="team_members")
     is_approved = models.BooleanField(default=False, help_text="Whether this user is approved by admin")
     profile_picture = models.ImageField(upload_to='profile_pictures/', blank=True, null=True)
     
