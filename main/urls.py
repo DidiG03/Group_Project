@@ -24,10 +24,25 @@ urlpatterns = [
     path("add-comment-reply/", views.add_comment_reply, name="add_comment_reply"),
     path("logout/", views.logout_view, name="logout"),  # Custom logout view
     
+    # Role-specific dashboards
+    path("engineer-dashboard/", views.engineer_dashboard, name="engineer_dashboard"),
+    path("team-leader-dashboard/", views.team_leader_dashboard, name="team_leader_dashboard"),
+    path("department-lead-dashboard/", views.department_lead_dashboard, name="department_lead_dashboard"),
+    
     # New team-related URLs
     path("create-team/", views.create_team, name="create_team"),
     path("create-department/", views.create_department, name="create_department"),
     path("request-team-join/", views.request_team_join, name="request_team_join"),
     path("approve-team-request/<int:request_id>/", views.approve_team_request, name="approve_team_request"),
     path("reject-team-request/<int:request_id>/", views.reject_team_request, name="reject_team_request"),
+    
+    # Team Health Check URLs
+    path("team-selection/", views.team_selection, name="team_selection"),
+    path("create-health-session/", views.create_health_session, name="create_health_session"),
+    path("view-health-session/<int:session_id>/", views.view_health_session, name="view_health_session"),
+    path("submit-vote/", views.submit_vote, name="submit_vote"),
+    path("team-health-summary/<int:team_id>/", views.team_health_summary, name="team_health_summary"),
+    path("manage-health-cards/", views.manage_health_cards, name="manage_health_cards"),
+    path("join-team-password/", views.join_team_password, name="join_team_password"),
+    path("update-team-password/<int:team_id>/", views.update_team_password, name="update_team_password"),
 ]

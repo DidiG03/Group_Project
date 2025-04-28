@@ -12,6 +12,7 @@ A comprehensive Django web application for project management and health trackin
 - **Comment System**: Leave comments on projects and reply to comments
 - **Role-Based Access**: Different access levels for admins and employees
 - **Profile Management**: User profiles with technical roles and department/team affiliations
+- **Team Password Protection**: Team leaders can set passwords for their teams, allowing members to join directly
 
 ## Prerequisites
 
@@ -143,6 +144,12 @@ The application will be available at http://127.0.0.1:8000/
 2. Create departments, teams, and set up the organizational structure
 3. Register new users who can then create company profiles or join existing ones
 4. Manage projects, track their health status, and organize tasks
+
+### Team Management
+- **Team Leaders** can set passwords for their teams in the Team Leader Dashboard
+- **Team Members** can join teams directly by using the team code and password from their Settings page
+- **Team Join Requests** can be submitted for teams that don't use password protection
+- **Team Leaders** can approve or reject join requests from their dashboard
 
 ## Project Structure
 

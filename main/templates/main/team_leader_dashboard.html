@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team Leader Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+        }
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+        .sidebar {
+            width: 240px;
+            background-color: #1e293b;
+            padding: 20px 0;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #2c3e50;
+            transition: all 0.3s ease;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            position: relative;
+            overflow-y: auto;
+        }
+        .sidebar.collapsed {
+            width: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        .sidebar-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        .sidebar-button {
+            background-color: transparent;
+            color: #e2e8f0;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 15px;
+            text-align: left;
+            cursor: pointer;
+            font-size: 15px;
+            width: 100%;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            line-height: 1.2;
+        }
+        .sidebar-button:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            transform: translateX(3px);
+        }
+        .sidebar-button::before {
+            content: "";
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            margin-right: 10px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            opacity: 0.8;
+        }
+        .sidebar-button:nth-child(1)::before {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6'%3E%3C/path%3E%3C/svg%3E");
+        }
+        .sidebar-button:nth-child(2)::before {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'%3E%3C/path%3E%3C/svg%3E");
+        }
+        .sidebar-button:nth-child(3)::before {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z'%3E%3C/path%3E%3C/svg%3E");
+        }
+        .sidebar-button:nth-child(4)::before {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z'%3E%3C/path%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M15 12a3 3 0 11-6 0 3 3 0 016 0z'%3E%3C/path%3E%3C/svg%3E");
+        }
+        .active-button {
+            background-color: rgba(255, 255, 255, 0.15);
+            color: #ffffff;
+            font-weight: 500;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .active-button::before {
+            opacity: 1 !important;
+        }
+        .logout-button {
+            background-color: rgba(239, 68, 68, 0.2);
+            color: #fecaca;
+            margin-top: auto;
+            width: calc(100% - 30px);
+            margin-left: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            padding: 12px 15px;
+            transition: all 0.2s ease;
+        }
+        .logout-button:hover {
+            background-color: rgba(239, 68, 68, 0.3);
+        }
+        .logout-button::before {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23fecaca'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1'%3E%3C/path%3E%3C/svg%3E");
+        }
+        .app-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 15px 20px;
+            color: white;
+            font-size: 22px;
+            font-weight: bold;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 10px;
+        }
+        .app-logo span {
+            color: #3b82f6;
+        }
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+        }
+        .menu-icon {
+            color: #2196F3;
+            font-size: 24px;
+            cursor: pointer;
+            margin-right: 15px;
+        }
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+        }
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            background-color: #3b82f6;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .role-badge {
+            font-size: 12px;
+            background-color: #3b82f6;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin-left: 10px;
+        }
+
+        /* Dashboard specific styles */
+        .dashboard-container {
+            padding: 20px;
+        }
+        .dashboard-header {
+            margin-bottom: 30px;
+        }
+        .dashboard-title {
+            font-size: 24px;
+            color: #1e293b;
+            margin-bottom: 10px;
+        }
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        .stat-title {
+            font-size: 14px;
+            color: #64748b;
+            margin-bottom: 10px;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1e293b;
+        }
+        .tabs-container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+        .tabs-header {
+            display: flex;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .tab {
+            padding: 15px 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 500;
+            color: #64748b;
+        }
+        .tab:hover {
+            color: #1e293b;
+        }
+        .tab.active {
+            color: #3b82f6;
+            border-bottom: 2px solid #3b82f6;
+        }
+        .tab-content {
+            padding: 20px;
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .member-list, .team-list, .health-sessions-list, .projects-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+        }
+        .member-card, .team-card, .session-card, .project-card {
+            background-color: #f8fafc;
+            border-radius: 6px;
+            padding: 15px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+        .member-card h3, .team-card h3, .session-card h3, .project-card h3 {
+            font-size: 16px;
+            margin-bottom: 10px;
+            color: #1e293b;
+        }
+        .member-meta, .team-meta, .session-meta, .project-meta {
+            font-size: 14px;
+            color: #64748b;
+        }
+        .btn {
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            border: none;
+            transition: background-color 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-primary {
+            background-color: #3b82f6;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #2563eb;
+        }
+        .btn-secondary {
+            background-color: #e2e8f0;
+            color: #475569;
+        }
+        .btn-secondary:hover {
+            background-color: #cbd5e1;
+        }
+        .btn-small {
+            padding: 4px 8px;
+            font-size: 12px;
+        }
+        .join-requests {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f1f5f9;
+            border-radius: 4px;
+        }
+        .join-request-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .join-request-item:last-child {
+            border-bottom: none;
+        }
+        .request-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .view-all {
+            display: block;
+            text-align: center;
+            margin-top: 15px;
+            color: #3b82f6;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .project-status {
+            display: inline-block;
+            padding: 3px 6px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .status-pending {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+        .status-approved {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+        .status-rejected {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        .status-complete {
+            background-color: #e0e7ff;
+            color: #3730a3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div id="sidebar" class="sidebar">
+            <div class="app-logo">Health<span>Track</span></div>
+            <div class="sidebar-buttons">
+                <button id="dashboard-btn" class="sidebar-button active-button" onclick="window.location.href='{% url 'dashboard' %}'">Dashboard</button>
+                <button id="teams-btn" class="sidebar-button" onclick="window.location.href='{% url 'team_leader_teams' %}'">My Teams</button>
+                <button id="members-btn" class="sidebar-button" onclick="window.location.href='{% url 'team_leader_members' %}'">Team Members</button>
+                <button id="settings-btn" class="sidebar-button" onclick="window.location.href='{% url 'settings' %}'">Settings</button>
+            </div>
+            <button class="sidebar-button logout-button" onclick="window.location.href='{% url 'logout' %}'">Logout</button>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="header">
+                <div class="header-left">
+                    <div class="menu-icon" onclick="toggleSidebar()">☰</div>
+                    <h1>Team Leader Dashboard <span class="role-badge">Team Leader</span></h1>
+                </div>
+                <div class="header-right">
+                    <div class="user-info">
+                        <div class="user-avatar">{{ request.user.first_name|first }}{{ request.user.last_name|first }}</div>
+                        <span>{{ request.user.first_name }} {{ request.user.last_name }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-container">
+                <div class="dashboard-header">
+                    <h2 class="dashboard-title">Welcome, {{ request.user.first_name }}</h2>
+                    <p>Here's an overview of your team's activities and performance:</p>
+                </div>
+
+                <!-- Stats Overview -->
+                <div class="stats-container">
+                    <div class="stat-card">
+                        <div class="stat-title">Team Members</div>
+                        <div class="stat-value">{{ team_members_count }}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-title">Active Projects</div>
+                        <div class="stat-value">{{ projects_count }}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-title">Health Check Sessions</div>
+                        <div class="stat-value">{{ health_sessions_count }}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-title">Pending Join Requests</div>
+                        <div class="stat-value">{{ join_requests_count }}</div>
+                    </div>
+                </div>
+
+                <!-- Tabs Container -->
+                <div class="tabs-container">
+                    <div class="tabs-header">
+                        <div class="tab active" onclick="openTab(event, 'team-members')">Team Members</div>
+                        <div class="tab" onclick="openTab(event, 'department-teams')">Department Teams</div>
+                        <div class="tab" onclick="openTab(event, 'health-sessions')">Health Check Sessions</div>
+                        <div class="tab" onclick="openTab(event, 'projects')">Projects</div>
+                    </div>
+
+                    <!-- Team Members Tab -->
+                    <div id="team-members" class="tab-content active">
+                        <div class="member-list">
+                            {% if team_members %}
+                                {% for member in team_members %}
+                                    <div class="member-card">
+                                        <h3>{{ member.first_name }} {{ member.last_name }}</h3>
+                                        <div class="member-meta">
+                                            <p>Role: {{ member.get_role_display }}</p>
+                                            <p>Email: {{ member.email }}</p>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <p>No team members found.</p>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Pending Join Requests -->
+                        <h3 style="margin-top: 20px;">Pending Join Requests</h3>
+                        {% if join_requests %}
+                            <div class="join-requests">
+                                {% for request in join_requests %}
+                                    <div class="join-request-item">
+                                        <div>
+                                            <strong>{{ request.user.first_name }} {{ request.user.last_name }}</strong>
+                                            <span>({{ request.user.email }})</span>
+                                        </div>
+                                        <!-- Debug Info -->
+                                        <div style="display: none;">
+                                            Team ID: {{ request.team.id }}
+                                            Team Name: {{ request.team.name }}
+                                            Available requests: {{ join_requests|length }}
+                                        </div>
+                                        <div class="request-actions">
+                                            <a href="{% url 'approve_team_request' request.id %}" class="btn btn-primary btn-small">Approve</a>
+                                            <a href="{% url 'reject_team_request' request.id %}" class="btn btn-secondary btn-small">Reject</a>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p>No pending join requests.</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Department Teams Tab -->
+                    <div id="department-teams" class="tab-content">
+                        <div class="team-list">
+                            {% if department_teams %}
+                                {% for team in department_teams %}
+                                    <div class="team-card">
+                                        <h3>{{ team.name }}</h3>
+                                        <div class="team-meta">
+                                            <p>Department: {{ team.department.name }}</p>
+                                            <p>Members: {{ team.members.count }}</p>
+                                            <p>
+                                                <a href="{% url 'team_health_summary' team.id %}" class="btn btn-primary btn-small">Health Summary</a>
+                                            </p>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <p>No department teams found.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Health Check Sessions Tab -->
+                    <div id="health-sessions" class="tab-content">
+                        <div class="health-sessions-list">
+                            {% if health_sessions %}
+                                {% for session in health_sessions %}
+                                    <div class="session-card">
+                                        <h3>{{ session.team.name }} - Health Check</h3>
+                                        <div class="session-meta">
+                                            <p>Created: {{ session.created_at|date:"M d, Y" }}</p>
+                                            <p>Status: {% if session.is_active %}Active{% else %}Completed{% endif %}</p>
+                                            <p>
+                                                <a href="{% url 'health_check_session' session.id %}" class="btn btn-primary btn-small">View Session</a>
+                                                <a href="{% url 'health_check_summary' session.id %}" class="btn btn-secondary btn-small">View Summary</a>
+                                            </p>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <p>No health check sessions found.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Projects Tab -->
+                    <div id="projects" class="tab-content">
+                        <div class="projects-list">
+                            {% if department_projects %}
+                                {% for project in department_projects %}
+                                    <div class="project-card">
+                                        <h3>{{ project.name }}</h3>
+                                        <div class="project-meta">
+                                            <p>Team: {{ project.team.name }}</p>
+                                            <p>Department: {{ project.team.department.name }}</p>
+                                            <p>
+                                                Status: 
+                                                <span class="project-status status-{{ project.status|lower }}">
+                                                    {{ project.get_status_display }}
+                                                </span>
+                                            </p>
+                                            <p>{{ project.description|truncatechars:100 }}</p>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                                {% if department_projects|length > 6 %}
+                                    <a href="{% url 'team_leader_projects' %}" class="view-all">View All Projects</a>
+                                {% endif %}
+                            {% else %}
+                                <p>No department projects found.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('collapsed');
+        }
+
+        function openTab(evt, tabName) {
+            // Hide all tab content
+            const tabContents = document.getElementsByClassName("tab-content");
+            for (let i = 0; i < tabContents.length; i++) {
+                tabContents[i].classList.remove("active");
+            }
+
+            // Remove active class from all tabs
+            const tabs = document.getElementsByClassName("tab");
+            for (let i = 0; i < tabs.length; i++) {
+                tabs[i].classList.remove("active");
+            }
+
+            // Show the current tab and add active class to the button
+            document.getElementById(tabName).classList.add("active");
+            evt.currentTarget.classList.add("active");
+        }
+
+        // Function to toggle password visibility
+        function togglePasswordVisibility(inputId) {
+            const passwordInput = document.getElementById(inputId);
+            if (passwordInput.type === "password") {
+                passwordInput.type = "text";
+            } else {
+                passwordInput.type = "password";
+            }
+        }
+    </script>
+</body>
+</html> 

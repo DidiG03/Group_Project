@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Engineer Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+        }
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+        .sidebar {
+            width: 240px;
+            background-color: #1e293b;
+            padding: 20px 0;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #2c3e50;
+            transition: all 0.3s ease;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            position: relative;
+            overflow-y: auto;
+        }
+        .sidebar.collapsed {
+            width: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        .sidebar-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        .sidebar-button {
+            background-color: transparent;
+            color: #e2e8f0;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 15px;
+            text-align: left;
+            cursor: pointer;
+            font-size: 15px;
+            width: 100%;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            line-height: 1.2;
+        }
+        .sidebar-button:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            transform: translateX(3px);
+        }
+        .sidebar-button::before {
+            content: "";
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            margin-right: 10px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            opacity: 0.8;
+        }
+        .sidebar-button:nth-child(1)::before {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6'%3E%3C/path%3E%3C/svg%3E");
+        }
+        .sidebar-button:nth-child(2)::before {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'%3E%3C/path%3E%3C/svg%3E");
+        }
+        .sidebar-button:nth-child(3)::before {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z'%3E%3C/path%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M15 12a3 3 0 11-6 0 3 3 0 016 0z'%3E%3C/path%3E%3C/svg%3E");
+        }
+        .active-button {
+            background-color: rgba(255, 255, 255, 0.15);
+            color: #ffffff;
+            font-weight: 500;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .active-button::before {
+            opacity: 1 !important;
+        }
+        .logout-button {
+            background-color: rgba(239, 68, 68, 0.2);
+            color: #fecaca;
+            margin-top: auto;
+            width: calc(100% - 30px);
+            margin-left: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            padding: 12px 15px;
+            transition: all 0.2s ease;
+        }
+        .logout-button:hover {
+            background-color: rgba(239, 68, 68, 0.3);
+        }
+        .logout-button::before {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23fecaca'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1'%3E%3C/path%3E%3C/svg%3E");
+        }
+        .app-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 15px 20px;
+            color: white;
+            font-size: 22px;
+            font-weight: bold;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 10px;
+        }
+        .app-logo span {
+            color: #3b82f6;
+        }
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+        }
+        .menu-icon {
+            color: #2196F3;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .back-icon, .notification-icon, .profile-icon {
+            color: #2196F3;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+        }
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            background-color: #3b82f6;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .role-badge {
+            font-size: 12px;
+            background-color: #3b82f6;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin-left: 10px;
+        }
+
+        /* Dashboard content styles */
+        .dashboard-container {
+            padding: 20px;
+        }
+        .welcome-section {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .welcome-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .welcome-title {
+            font-size: 22px;
+            color: #1e293b;
+        }
+        .dashboard-section {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .section-title {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #1e293b;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 10px;
+        }
+        .team-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 15px;
+        }
+        .team-card {
+            background-color: #f8fafc;
+            border-radius: 6px;
+            padding: 15px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .team-card h3 {
+            font-size: 16px;
+            margin-bottom: 10px;
+            color: #1e293b;
+        }
+        .team-meta {
+            font-size: 14px;
+            color: #64748b;
+        }
+        .health-check-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 15px;
+        }
+        .health-check-card {
+            background-color: #f8fafc;
+            border-radius: 6px;
+            padding: 15px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .health-check-title {
+            font-size: 16px;
+            margin-bottom: 10px;
+            color: #1e293b;
+        }
+        .health-check-meta {
+            font-size: 14px;
+            color: #64748b;
+            margin-bottom: 15px;
+        }
+        .health-check-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .btn {
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            border: none;
+            transition: background-color 0.2s;
+        }
+        .btn-primary {
+            background-color: #3b82f6;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #2563eb;
+        }
+        .btn-secondary {
+            background-color: #e2e8f0;
+            color: #475569;
+        }
+        .btn-secondary:hover {
+            background-color: #cbd5e1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div id="sidebar" class="sidebar">
+            <div class="app-logo">Health<span>Track</span></div>
+            <div class="sidebar-buttons">
+                <button id="dashboard-btn" class="sidebar-button active-button" onclick="window.location.href='{% url 'dashboard' %}'">Dashboard</button>
+                <button id="teams-btn" class="sidebar-button" onclick="window.location.href='{% url 'engineer_teams' %}'">My Teams</button>
+                <button id="health-check-btn" class="sidebar-button" onclick="window.location.href='{% url 'engineer_health_checks' %}'">Health Checks</button>
+                <button id="settings-btn" class="sidebar-button" onclick="window.location.href='{% url 'settings' %}'">Settings</button>
+            </div>
+            <button class="sidebar-button logout-button" onclick="window.location.href='{% url 'logout' %}'">Logout</button>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="header">
+                <div class="header-left">
+                    <div class="menu-icon" onclick="toggleSidebar()">☰</div>
+                    <h1>Engineer Dashboard <span class="role-badge">Engineer</span></h1>
+                </div>
+                <div class="header-right">
+                    <div class="user-info">
+                        <div class="user-avatar">{{ request.user.first_name|first }}{{ request.user.last_name|first }}</div>
+                        <span>{{ request.user.first_name }} {{ request.user.last_name }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-container">
+                <div class="welcome-section">
+                    <div class="welcome-header">
+                        <h2 class="welcome-title">Welcome, {{ request.user.first_name }}</h2>
+                    </div>
+                    <p>Here's what's happening in your teams today:</p>
+                </div>
+
+                <!-- Teams Section -->
+                <div class="dashboard-section">
+                    <h2 class="section-title">My Teams</h2>
+                    <div class="team-list">
+                        {% if teams %}
+                            {% for team in teams %}
+                                <div class="team-card">
+                                    <h3>{{ team.name }}</h3>
+                                    <div class="team-meta">
+                                        <p>{{ team.department.name }} Department</p>
+                                        <p>{{ team.members.count }} team members</p>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <p>You are not a member of any teams yet. Visit settings to join a team.</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Health Checks Section -->
+                <div class="dashboard-section">
+                    <h2 class="section-title">Active Health Check Sessions</h2>
+                    <div class="health-check-list">
+                        {% if health_sessions %}
+                            {% for session in health_sessions %}
+                                <div class="health-check-card">
+                                    <h3 class="health-check-title">{{ session.team.name }} - Health Check</h3>
+                                    <div class="health-check-meta">
+                                        <p>Created: {{ session.created_at|date:"M d, Y" }}</p>
+                                        <p>Status: {% if session.is_active %}Active{% else %}Completed{% endif %}</p>
+                                    </div>
+                                    <div class="health-check-actions">
+                                        <a href="{% url 'health_check_vote' session.id %}" class="btn btn-primary">Vote</a>
+                                        <a href="{% url 'health_check_summary' session.id %}" class="btn btn-secondary">View Summary</a>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <p>No active health check sessions found.</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Projects Section -->
+                <div class="dashboard-section">
+                    <h2 class="section-title">My Projects</h2>
+                    <div class="team-list">
+                        {% if projects %}
+                            {% for project in projects %}
+                                <div class="team-card">
+                                    <h3>{{ project.name }}</h3>
+                                    <div class="team-meta">
+                                        <p>Team: {{ project.team.name }}</p>
+                                        <p>Status: {{ project.get_status_display }}</p>
+                                        <p>{{ project.description|truncatechars:100 }}</p>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <p>You don't have any projects assigned.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('collapsed');
+        }
+    </script>
+</body>
+</html> 

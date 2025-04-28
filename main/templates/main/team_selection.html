@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+{% load project_filters %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team Selection | HealthCheck</title>
+    <style>
+        /* Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background-color: #f5f7fb;
+            color: #333;
+        }
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        /* Sidebar Styles */
+        .sidebar {
+            width: 250px;
+            background-color: #1e293b;
+            color: #e2e8f0;
+            padding: 20px 0;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+            transition: transform 0.3s ease;
+        }
+        .app-logo {
+            font-size: 24px;
+            font-weight: bold;
+            padding: 0 20px 20px;
+            border-bottom: 1px solid #475569;
+            margin-bottom: 20px;
+        }
+        .app-logo span {
+            color: #3b82f6;
+        }
+        .sidebar-buttons {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+        .sidebar-button {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            font-size: 16px;
+            color: #e2e8f0;
+            text-decoration: none;
+            transition: background-color 0.2s;
+            margin-bottom: 5px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            text-align: left;
+        }
+        .sidebar-button:hover {
+            background-color: #334155;
+        }
+        .active-button {
+            background-color: #2563eb;
+            color: white;
+        }
+        .active-button:hover {
+            background-color: #1d4ed8;
+        }
+        .logout-button {
+            margin-top: auto;
+            border-top: 1px solid #475569;
+            padding-top: 15px;
+            color: #e2e8f0;
+        }
+        
+        /* Main Content Styles */
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            margin-left: 250px;
+            width: calc(100% - 250px);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+        }
+        .header-right {
+            display: flex;
+            align-items: center;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+        }
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            background-color: #3b82f6;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .section-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #1e293b;
+        }
+        
+        /* Team Cards Grid */
+        .teams-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .team-card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            padding: 20px;
+            transition: transform 0.2s ease;
+        }
+        .team-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+        }
+        .team-name {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #1e293b;
+        }
+        .team-department {
+            color: #64748b;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+        
+        /* Session List */
+        .session-list h4 {
+            font-size: 16px;
+            color: #4b5563;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        .session-item {
+            padding: 10px;
+            margin-bottom: 8px;
+            font-size: 14px;
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            transition: background-color 0.2s;
+        }
+        .session-item:hover {
+            background-color: #f1f5f9;
+        }
+        .session-date {
+            color: #6b7280;
+            font-size: 12px;
+            margin-top: 3px;
+        }
+        .session-name {
+            font-weight: 500;
+            color: #1f2937;
+        }
+        
+        /* Team Actions */
+        .team-actions {
+            margin-top: 15px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            font-weight: 500;
+            display: inline-block;
+        }
+        .btn-primary {
+            background-color: #3b82f6;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #2563eb;
+        }
+        .btn-secondary {
+            background-color: #f3f4f6;
+            color: #4b5563;
+            border: 1px solid #e5e7eb;
+        }
+        .btn-secondary:hover {
+            background-color: #e5e7eb;
+        }
+        
+        /* Join Team Section */
+        .join-team-section {
+            background-color: #e0f2fe;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        .join-team-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #0c4a6e;
+        }
+        .join-team-form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: flex-end;
+        }
+        .form-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            font-size: 14px;
+            color: #0c4a6e;
+        }
+        .form-control {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+        }
+        
+        /* No Teams Message */
+        .no-teams-message {
+            text-align: center;
+            background-color: white;
+            padding: 40px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+        .no-teams-message h3 {
+            font-size: 18px;
+            color: #4b5563;
+            margin-bottom: 15px;
+        }
+        .no-teams-message p {
+            color: #6b7280;
+            margin-bottom: 20px;
+        }
+        
+        /* Messages */
+        .messages {
+            margin-bottom: 20px;
+        }
+        .message {
+            padding: 12px 16px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .message.success {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+        .message.error {
+            background-color: #fee2e2;
+            color: #b91c1c;
+        }
+        .message.warning {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+        .message.info {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                z-index: 100;
+            }
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+            }
+            .hamburger-menu {
+                display: block;
+            }
+            .join-team-form {
+                flex-direction: column;
+            }
+            .form-group {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="app-logo">
+                Health<span>Check</span>
+            </div>
+            <div class="sidebar-buttons">
+                <!-- Dashboard link based on user role -->
+                {% if role == 'engineer' %}
+                    <a href="{% url 'engineer_dashboard' %}" class="sidebar-button">Dashboard</a>
+                {% elif role == 'team_leader' %}
+                    <a href="{% url 'team_leader_dashboard' %}" class="sidebar-button">Dashboard</a>
+                {% elif role == 'department_lead' %}
+                    <a href="{% url 'department_lead_dashboard' %}" class="sidebar-button">Dashboard</a>
+                {% elif role == 'senior_manager' %}
+                    <a href="{% url 'admin_dashboard' %}" class="sidebar-button">Dashboard</a>
+                {% else %}
+                    <a href="{% url 'dashboard' %}" class="sidebar-button">Dashboard</a>
+                {% endif %}
+                
+                <a href="{% url 'team_selection' %}" class="sidebar-button active-button">My Teams</a>
+                <a href="{% url 'project_health' %}" class="sidebar-button">Health Checks</a>
+                <a href="{% url 'settings' %}" class="sidebar-button">Settings</a>
+            </div>
+            <a href="{% url 'logout' %}" class="sidebar-button logout-button">Log Out</a>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Header -->
+            <div class="header">
+                <div class="header-left">
+                    <h1 class="section-title">Team Selection</h1>
+                </div>
+                <div class="header-right">
+                    <div class="user-info">
+                        <div class="user-avatar">
+                            {{ user.username|first|upper }}
+                        </div>
+                        <span>{{ user.username }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Messages -->
+            {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                <div class="message {{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+
+            
+            <!-- Team Cards -->
+            <h2 class="section-title">Your Teams</h2>
+            
+            {% if user_teams %}
+                <div class="teams-grid">
+                    {% for team in user_teams %}
+                        <div class="team-card">
+                            <h3 class="team-name">{{ team.name }}</h3>
+                            <div class="team-department">{{ team.department.name }}</div>
+                            
+                            <div class="session-list">
+                                <h4>Recent Health Checks:</h4>
+                                {% with sessions=team_sessions|get_item:team.id %}
+                                    {% if sessions %}
+                                        {% for session in sessions %}
+                                            <div class="session-item">
+                                                <div class="session-name">{{ session.name }}</div>
+                                                <span class="session-date">{{ session.created_at|date:"M d, Y" }}</span>
+                                            </div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <p>No recent health checks</p>
+                                    {% endif %}
+                                {% endwith %}
+                            </div>
+                            
+                            <div class="team-actions">
+                                <a href="{% url 'create_health_session' %}?team_id={{ team.id }}" class="btn btn-primary">Start New Session</a>
+                                <a href="{% url 'team_health_summary' team_id=team.id %}" class="btn btn-secondary">View Summary</a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="no-teams-message">
+                    <h3>You're not a member of any team yet</h3>
+                    <p>Join a team using a team code and password, or request to join a team in Settings.</p>
+                    <a href="{% url 'settings' %}" class="btn btn-primary">Go to Settings</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <script>
+        // Mobile menu toggle
+        document.addEventListener('DOMContentLoaded', function() {
+            const hamburgerMenu = document.querySelector('.hamburger-menu');
+            const sidebar = document.querySelector('.sidebar');
+            
+            if (hamburgerMenu) {
+                hamburgerMenu.addEventListener('click', () => {
+                    sidebar.classList.toggle('active');
+                });
+            }
+            
+            // Auto-hide messages after 5 seconds
+            setTimeout(function() {
+                const messages = document.querySelectorAll('.message');
+                messages.forEach(message => {
+                    message.style.opacity = '0';
+                    message.style.transition = 'opacity 0.5s ease';
+                    setTimeout(() => message.style.display = 'none', 500);
+                });
+            }, 5000);
+        });
+    </script>
+</body>
+</html> 

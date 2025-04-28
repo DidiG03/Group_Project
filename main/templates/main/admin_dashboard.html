@@ -436,12 +436,7 @@
                 {% endfor %}
             </div>
             {% endif %}
-            
-            {% if user.profile.role != 'admin' %}
-            <div class="alert-message warning-message">
-                <p>You are not logged in as an admin user. You should use the <a href="{% url 'dashboard' %}">Regular Dashboard</a> instead.</p>
-            </div>
-            {% endif %}
+        
             
             <h1 class="admin-title">Admin Dashboard</h1>
             

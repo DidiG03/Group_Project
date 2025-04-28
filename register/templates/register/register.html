@@ -58,9 +58,6 @@
             margin-left: 10px;
             font-weight: normal;
         }
-        .company-code-section {
-            display: none;
-        }
     </style>
 </head>
 <body>
@@ -136,33 +133,32 @@
             <div class="form-group role-options">
                 <label>I am registering as:</label>
                 <div class="role-option">
-                    <input type="radio" name="role" id="role_admin" value="admin" {% if role == 'admin' or not role %}checked{% endif %}> 
-                    <label for="role_admin" class="role-label">Admin - Create a new company</label>
+                    <input type="radio" name="role" id="role_senior_manager" value="senior_manager" {% if role == 'senior_manager' or not role %}checked{% endif %}> 
+                    <label for="role_senior_manager" class="role-label">Senior manager</label>
                 </div>
                 <div class="role-option">
-                    <input type="radio" name="role" id="role_employee" value="employee" {% if role == 'employee' %}checked{% endif %}> 
-                    <label for="role_employee" class="role-label">Employee - Join an existing company</label>
+                    <input type="radio" name="role" id="role_department_lead" value="department_lead" {% if role == 'department_lead' %}checked{% endif %}> 
+                    <label for="role_department_lead" class="role-label">Department Lead</label>
+                </div>
+                <div class="role-option">
+                    <input type="radio" name="role" id="role_team_leader" value="team_leader" {% if role == 'team_leader' %}checked{% endif %}> 
+                    <label for="role_team_leader" class="role-label">Team Leader</label>
+                </div>
+                <div class="role-option">
+                    <input type="radio" name="role" id="role_engineer" value="engineer" {% if role == 'engineer' %}checked{% endif %}> 
+                    <label for="role_engineer" class="role-label">Engineer</label>
                 </div>
                 {% if form.role.errors %}
                 <div class="error-text">{{ form.role.errors|join:", " }}</div>
                 {% endif %}
             </div>
             
-            <div class="form-group">
-                <label for="id_company_name">Company Name</label>
-                <input type="text" name="company_name" class="form-control {% if form.company_name.errors %}is-invalid{% endif %}" 
-                       id="id_company_name" value="{{ company_name|default:'' }}" required>
-                {% if form.company_name.errors %}
-                <div class="error-text">{{ form.company_name.errors|join:", " }}</div>
-                {% endif %}
-            </div>
-            
-            <!-- Company Code (Only for employees) -->
-            <div class="form-group company-code-section" id="company_code_section">
-                <label for="id_company_code">Company Access Code</label>
+            <!-- Company Code (Optional for all users) -->
+            <div class="form-group" id="company_code_section">
+                <label for="id_company_code">Company Access Code (Optional)</label>
                 <input type="text" name="company_code" class="form-control {% if form.company_code.errors %}is-invalid{% endif %}" 
                        id="id_company_code" value="{{ company_code|default:'' }}">
-                <small class="form-text text-muted">Enter the access code provided by your company admin</small>
+                <small class="form-text text-muted">Enter the access code if provided by your company admin, or leave blank to join the default company</small>
                 {% if form.company_code.errors %}
                 <div class="error-text">{{ form.company_code.errors|join:", " }}</div>
                 {% endif %}
@@ -177,30 +173,5 @@
 
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Show/hide company code field based on role selection
-        document.addEventListener('DOMContentLoaded', function() {
-            const roleAdmin = document.getElementById('role_admin');
-            const roleEmployee = document.getElementById('role_employee');
-            const companyCodeSection = document.getElementById('company_code_section');
-            
-            function updateCompanyCodeVisibility() {
-                if (roleEmployee.checked) {
-                    companyCodeSection.style.display = 'block';
-                    document.getElementById('id_company_code').setAttribute('required', 'required');
-                } else {
-                    companyCodeSection.style.display = 'none';
-                    document.getElementById('id_company_code').removeAttribute('required');
-                }
-            }
-            
-            // Initial check
-            updateCompanyCodeVisibility();
-            
-            // Add event listeners
-            roleAdmin.addEventListener('change', updateCompanyCodeVisibility);
-            roleEmployee.addEventListener('change', updateCompanyCodeVisibility);
-        });
-    </script>
 </body>
 </html>

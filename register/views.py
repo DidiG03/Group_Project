@@ -16,12 +16,18 @@ def register(response):
             messages.success(response, "Account created successfully!")
             
             # Redirect based on user role
-            if user.profile.role == 'admin':
+            if user.profile.role == 'senior_manager':
                 return redirect("admin_dashboard")
+            elif user.profile.role == 'department_lead':
+                # Department leads are also auto-approved
+                return redirect("dashboard")
             else:
-                # For employees, show a message that their account needs approval
-                messages.info(response, "Your account has been created and is awaiting admin approval.")
-                return redirect("waiting_approval")
+                # For team leaders and engineers, check if approval is needed
+                if user.profile.is_approved:
+                    return redirect("dashboard")
+                else:
+                    messages.info(response, "Your account has been created and is awaiting approval.")
+                    return redirect("waiting_approval")
         else:
             # If there are form errors, render the custom template with form data
             context = {
@@ -31,7 +37,6 @@ def register(response):
                 'full_name': response.POST.get('full_name', ''),
                 'email': response.POST.get('email', ''),
                 'dob': response.POST.get('dob', ''),
-                'company_name': response.POST.get('company_name', ''),
                 'company_code': response.POST.get('company_code', ''),
                 'role': response.POST.get('role', ''),
             }
@@ -43,7 +48,7 @@ def register(response):
 
 @login_required
 def waiting_approval(request):
-    """Page for employees to see while waiting for approval"""
+    """Page for team leaders and engineers to see while waiting for approval"""
     # Get the user profile
     try:
         profile = UserProfile.objects.get(user=request.user)

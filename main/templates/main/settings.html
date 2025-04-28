@@ -297,7 +297,7 @@
                 Health<span>Check</span>
             </div>
             <div class="sidebar-buttons">
-                {% if user.profile.role == 'admin' %}
+                {% if user.profile.role == 'senior_manager' %}
                     <a href="{% url 'admin_dashboard' %}" style="text-decoration: none; width: 100%;">
                         <button class="sidebar-button">Admin Dashboard</button>
                     </a>
@@ -416,45 +416,6 @@
                         <small class="form-text text-muted">Hold Ctrl (or Cmd on Mac) while clicking to select multiple teams</small>
                     </div>
                     
-                    {% if profile.technical_role %}
-                    <!-- Request to join a team -->
-                    <div class="theme-section">
-                        <h3 class="theme-title">Request to Join a Team</h3>
-                        <form method="post" action="{% url 'request_team_join' %}" class="join-team-form">
-                            {% csrf_token %}
-                            <div class="form-group">
-                                <label for="join_team">Select Team to Join</label>
-                                <select id="join_team" name="team_id" class="form-control" required>
-                                    <option value="">-- Select Team --</option>
-                                    {% for team in available_teams %}
-                                    <option value="{{ team.id }}">{{ team.name }} ({{ team.department.name }})</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <button type="submit" class="btn-save" style="background-color: #4CAF50;">Request to Join</button>
-                        </form>
-                        
-                        <!-- Show pending team requests -->
-                        {% if pending_requests %}
-                        <div style="margin-top: 20px;">
-                            <h4 style="font-size: 14px; color: #666;">Your Pending Team Requests</h4>
-                            <ul style="padding-left: 20px; margin-top: 10px;">
-                                {% for request in pending_requests %}
-                                <li style="margin-bottom: 5px;">
-                                    {{ request.team.name }} - <span style="color: #f39c12; font-style: italic;">Pending</span>
-                                </li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-                        {% endif %}
-                    </div>
-                    {% else %}
-                    <div class="theme-section" style="background-color: #fff3cd; padding: 15px; border-radius: 5px; margin-top: 20px;">
-                        <h3 class="theme-title" style="color: #856404; margin-top: 0;">Select a Professional Role</h3>
-                        <p style="margin-bottom: 0;">Please select a professional role above before requesting to join additional teams.</p>
-                    </div>
-                    {% endif %}
-                    
                     <div class="form-group">
                         <label for="new_password">New Password <small>(leave blank to keep current password)</small></label>
                         <input type="password" id="new_password" name="new_password" class="form-control" 
@@ -466,7 +427,7 @@
                 </form>
                 
                 
-                {% if profile and profile.role == 'admin' %}
+                {% if profile and profile.role == 'senior_manager' %}
                 <div class="theme-section">
                     <h3 class="theme-title">Company Information</h3>
                     <div class="company-info">
@@ -483,8 +444,28 @@
                             </div>
                             <p class="helptext">Share this code with employees and managers who need to join your company.</p>
                         </div>
+                        
+                        <!-- Senior Manager Administrative Options -->
+                        <div class="admin-options" style="margin-top: 30px;">
+                            <h4 style="font-size: 16px; margin-bottom: 15px;">Management Options</h4>
+                            
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                <a href="{% url 'create_department' %}" class="btn-save" style="text-decoration: none; text-align: center; background-color: #3b82f6;">
+                                    Create Department
+                                </a>
+                                <a href="{% url 'create_team' %}" class="btn-save" style="text-decoration: none; text-align: center; background-color: #3b82f6;">
+                                    Create Team
+                                </a>
+                                <a href="{% url 'manage_health_cards' %}" class="btn-save" style="text-decoration: none; text-align: center; background-color: #8b5cf6;">
+                                    Manage Health Cards
+                                </a>
+                                <a href="{% url 'admin_projects' %}" class="btn-save" style="text-decoration: none; text-align: center; background-color: #8b5cf6;">
+                                    Manage Projects
+                                </a>
+                            </div>
+                        </div>
                         {% else %}
-                        <p>You haven't created a company yet. Create one when you sign up a new user with the admin role.</p>
+                        <p>You haven't created a company yet. Create one when you sign up a new user with the senior manager role.</p>
                         {% endif %}
                     </div>
                 </div>

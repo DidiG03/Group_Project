@@ -344,6 +344,7 @@
             </div>
             <div class="sidebar-buttons">
                 <button class="sidebar-button active-button">Dashboard</button>
+                <button class="sidebar-button" id="team-health-btn">Team Health Checks</button>
                 <button class="sidebar-button" id="project-health-btn">Project Health</button>
                 <button class="sidebar-button" id="settings-btn">Settings</button>
             </div>
@@ -468,6 +469,10 @@
             // Navigation buttons
             document.getElementById('project-health-btn').addEventListener('click', function() {
                 window.location.href = "{% url 'project_health' %}";
+            });
+            
+            document.getElementById('team-health-btn').addEventListener('click', function() {
+                window.location.href = "{% url 'team_selection' %}";
             });
             
             document.getElementById('settings-btn').addEventListener('click', function() {
