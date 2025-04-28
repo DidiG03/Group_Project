@@ -905,15 +905,14 @@ def mark_comment_read(request, comment_id):
 
 # Add view to approve an employee
 @login_required
-@admin_required
+@senior_manager_required
 def approve_employee(request, user_id):
     if request.method == "POST":
         try:
             profile = UserProfile.objects.get(user_id=user_id)
             
-            # Verify the admin is from the same company
-            admin_companies = Company.objects.filter(created_by=request.user)
-            if profile.company not in admin_companies:
+            # Verify the senior manager is from the same company
+            if profile.company != request.user.profile.company:
                 messages.error(request, "You can only approve employees from your own company.")
                 return redirect('admin_dashboard')
             

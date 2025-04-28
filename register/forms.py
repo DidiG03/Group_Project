@@ -51,25 +51,24 @@ class RegisterForm(UserCreationForm):
         if commit:
             user.save()
             
-            role = self.cleaned_data['role']
+            # Get the role and company code from the form
+            role = self.cleaned_data.get('role')
             company_code = self.cleaned_data.get('company_code')
             
-            if role == 'senior_manager' or not company_code:
-                # Get or create the default company for senior managers or users without a company code
-                company, created = Company.objects.get_or_create(
-                    name="HealthCheck Company",  # Fixed company name
-                    defaults={'created_by': user}
+            if role == 'senior_manager':
+                # For senior managers, create a new company
+                company = Company.objects.create(
+                    name=f"{user.first_name}'s Company",
+                    access_code=company_code,
+                    created_by=user
                 )
                 
-                # Create a user profile
-                # Senior managers are automatically approved, others based on role
-                is_approved = role == 'senior_manager' or role == 'department_lead'
-                
+                # Create a user profile - senior managers are auto-approved
                 UserProfile.objects.create(
                     user=user,
                     role=role,
                     company=company,
-                    is_approved=is_approved  # Auto-approve senior managers and department leads
+                    is_approved=True
                 )
             else:
                 # For other roles with a company code, use the existing company
@@ -78,8 +77,8 @@ class RegisterForm(UserCreationForm):
                 )
                 
                 # Create a user profile
-                # Department leads are auto-approved, others need approval
-                is_approved = role == 'department_lead'
+                # Only senior managers and department leads are auto-approved
+                is_approved = role in ['senior_manager', 'department_lead']
                 
                 UserProfile.objects.create(
                     user=user,
