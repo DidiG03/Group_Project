@@ -1249,14 +1249,13 @@ def create_department(request):
 def team_selection(request):
     """View for users to select a team for health checks"""
     # Get user's teams
-    user_teams = []
-    user_role = 'engineer'  # Default role
-    
     if hasattr(request.user, 'profile'):
-        user_teams = request.user.profile.teams.all()
         user_role = request.user.profile.role
-    
-    if not user_teams:
+        if user_role == 'senior_manager':
+            user_teams = Team.objects.all()
+        else:
+            user_teams = request.user.profile.teams.all()
+    else:
         messages.warning(request, "You need to join a team before you can participate in health checks.")
         return redirect('settings')
     
@@ -1293,7 +1292,7 @@ def create_health_session(request):
             team = Team.objects.get(id=team_id)
             
             # Check if user belongs to the team
-            if team not in request.user.profile.teams.all():
+            if team not in request.user.profile.teams.all() and request.user.profile.role != 'senior_manager':
                 messages.error(request, "You can only create sessions for teams you belong to")
                 return redirect('team_selection')
             
@@ -1335,7 +1334,7 @@ def view_health_session(request, session_id):
         session = HealthCheckSession.objects.get(id=session_id)
         
         # Check if user belongs to the team
-        if session.team not in request.user.profile.teams.all():
+        if session.team not in request.user.profile.teams.all() and request.user.profile.role != 'senior_manager':
             messages.error(request, "You can only view sessions for teams you belong to")
             return redirect('team_selection')
         
@@ -1383,7 +1382,7 @@ def submit_vote(request):
         card = HealthCheckCard.objects.get(id=card_id)
         
         # Check if user belongs to the team
-        if session.team not in request.user.profile.teams.all():
+        if session.team not in request.user.profile.teams.all() and request.user.profile.role != 'senior_manager':
             return JsonResponse({"error": "You can only vote in sessions for teams you belong to"}, status=403)
         
         # Create or update vote
@@ -1418,7 +1417,7 @@ def team_health_summary(request, team_id):
         team = Team.objects.get(id=team_id)
         
         # Check if user belongs to the team
-        if team not in request.user.profile.teams.all():
+        if team not in request.user.profile.teams.all() and request.user.profile.role != 'senior_manager':
             messages.error(request, "You can only view summaries for teams you belong to")
             return redirect('team_selection')
         

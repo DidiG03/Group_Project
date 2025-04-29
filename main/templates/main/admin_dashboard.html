@@ -402,12 +402,15 @@
         <div class="sidebar" id="sidebar">
             <img src="{% static 'images/Sky_Group_logo_2020.svg.png' %}" alt="Company Logo" class="logo">
             <div class="app-logo">
-                Health<span>Check</span> Admin
+                Health<span>Check</span>Admin
             </div>
             <div class="sidebar-buttons">
                 <button class="sidebar-button active-button">Admin Dashboard</button>
                 <a href="{% url 'admin_projects' %}" style="text-decoration: none; width: 100%;">
                     <button class="sidebar-button">Project Management</button>
+                </a>
+                <a href="{% url 'team_selection' %}" style="text-decoration: none; width: 100%;">
+                    <button class="sidebar-button">Team Health Checks</button>
                 </a>
                 <a href="{% url 'settings' %}" style="text-decoration: none; width: 100%;">
                     <button class="sidebar-button">Settings</button>
@@ -551,7 +554,7 @@
                                     <th>Name</th>
                                     <th>Email</th>
                                     <th>Role</th>
-                                    <th>Company</th>
+                                    <th>Assigned to Team</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -563,7 +566,15 @@
                                     <td>{{ profile.user.first_name }} {{ profile.user.last_name }}</td>
                                     <td>{{ profile.user.email }}</td>
                                     <td>{{ profile.get_role_display }}</td>
-                                    <td>{{ profile.company.name|default:"N/A" }}</td>
+                                    <td>
+                                      {% if profile.teams.all %}
+                                        {% for team in profile.teams.all %}
+                                          {{ team.name }}{% if not forloop.last %}, {% endif %}
+                                        {% endfor %}
+                                      {% else %}
+                                        No team
+                                      {% endif %}
+                                    </td>
                                     <td>
                                         {% if profile.user.id != user.id %}
                                             <button class="action-btn">Edit</button>
