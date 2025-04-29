@@ -27,8 +27,9 @@
     
     /* Sidebar Styles */
     .sidebar {
-        width: 250px;
-        background-color: #1e293b;
+
+        width: 240px;
+        background-color: #4B0D5A;
         color: #e2e8f0;
         padding: 20px 0;
         display: flex;
@@ -47,11 +48,16 @@
         transform: translateX(-100%);
     }
     .app-logo {
-        font-size: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 10px 15px;
+        color: white;
+        font-size: 22px;
         font-weight: bold;
-        padding: 0 20px 20px;
-        border-bottom: 1px solid #475569;
-        margin-bottom: 20px;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        margin-bottom: 10px;
+
     }
     .app-logo span {
         color: #3b82f6;
@@ -510,6 +516,13 @@
         color: #6b7280;
         font-style: italic;
     }
+
+    .logo {
+        display: block;
+        max-width: 80px;
+        height: auto;
+        margin: 0 auto;
+        }
     
     /* Responsive adjustments */
     @media (max-width: 768px) {
@@ -531,6 +544,8 @@
         .teams-grid, .health-sessions-grid, .projects-grid {
             grid-template-columns: 1fr;
         }
+
+
     }
 </style>
 {% endblock %}
@@ -538,7 +553,9 @@
 {% block content %}
 <div class="container">
     <!-- Sidebar -->
+    {% load static %}
     <div class="sidebar" id="sidebar">
+         <img src="{% static 'images/Sky_Group_logo_2020.svg.png' %}" alt="Company Logo" class="logo">
         <div class="app-logo">
             Health<span>Check</span>
         </div>
