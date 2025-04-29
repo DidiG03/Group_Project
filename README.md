@@ -166,4 +166,6 @@ The application will be available at http://127.0.0.1:8000/
 ## Contributors
 
 - Sefrid Kapllani
+- Jakub Raczkiewicz
+- Abulai Danfa
 - Fattouh Mohammed
