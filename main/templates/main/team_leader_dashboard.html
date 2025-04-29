@@ -17,7 +17,7 @@
         }
         .sidebar {
             width: 240px;
-            background-color: #1e293b;
+            background-color: #4B0D5A;
             padding: 20px 0;
             display: flex;
             flex-direction: column;
@@ -337,12 +337,20 @@
             background-color: #e0e7ff;
             color: #3730a3;
         }
+        .logo {
+        display: block;
+        max-width: 80px;
+        height: auto;
+        margin: 0 auto;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <!-- Sidebar -->
+        {% load static %}
         <div id="sidebar" class="sidebar">
+            <img src="{% static 'images/Sky_Group_logo_2020.svg.png' %}" alt="Company Logo" class="logo">
             <div class="app-logo">Health<span>Track</span></div>
             <div class="sidebar-buttons">
                 <button id="dashboard-btn" class="sidebar-button active-button" onclick="window.location.href='{% url 'dashboard' %}'">Dashboard</button>
