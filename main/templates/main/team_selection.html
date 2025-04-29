@@ -7,15 +7,11 @@
     <title>Team Selection | HealthCheck</title>
     <style>
         /* Base Styles */
-        * {
+        body {
+            font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        body {
-            background-color: #f5f7fb;
-            color: #333;
+            background-color: #f0f0f0;
         }
         .container {
             display: flex;
@@ -23,61 +19,99 @@
         }
         
         /* Sidebar Styles */
-        .sidebar {
-            width: 250px;
-            background-color: #1e293b;
-            color: #e2e8f0;
-            padding: 20px 0;
-            display: flex;
-            flex-direction: column;
-            position: fixed;
-            height: 100vh;
-            transition: transform 0.3s ease;
-        }
         .app-logo {
-            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 15px 20px;
+            color: white;
+            font-size: 22px;
             font-weight: bold;
-            padding: 0 20px 20px;
-            border-bottom: 1px solid #475569;
-            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 10px;
         }
         .app-logo span {
             color: #3b82f6;
         }
+        .sidebar {
+            width: 240px;
+            background-color: #4B0D5A;
+            padding: 20px 0;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #2c3e50;
+            transition: all 0.3s ease;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            position: relative;
+            overflow-y: auto;
+        }
+        .sidebar.collapsed {
+            width: 0;
+            padding: 0;
+            overflow: hidden;
+        }
         .sidebar-buttons {
             display: flex;
             flex-direction: column;
-            flex: 1;
+            gap: 12px;
+            padding: 15px;
+            margin-top: 20px;
         }
         .sidebar-button {
+            background-color: transparent;
+            color: #e2e8f0;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 15px;
+            text-align: left;
+            cursor: pointer;
+            font-size: 15px;
+            width: 100%;
+            transition: all 0.2s ease;
             display: flex;
             align-items: center;
-            padding: 12px 20px;
-            font-size: 16px;
-            color: #e2e8f0;
-            text-decoration: none;
-            transition: background-color 0.2s;
-            margin-bottom: 5px;
-            border: none;
-            background: none;
-            cursor: pointer;
-            text-align: left;
+            line-height: 1.2;
         }
         .sidebar-button:hover {
-            background-color: #334155;
+            background-color: rgba(255, 255, 255, 0.1);
+            transform: translateX(3px);
         }
-        .active-button {
-            background-color: #2563eb;
-            color: white;
+        .sidebar-button::before {
+            content: "";
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            margin-right: 10px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            opacity: 0.8;
         }
-        .active-button:hover {
-            background-color: #1d4ed8;
+        .sidebar-button:nth-child(1)::before {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6'%3E%3C/path%3E%3C/svg%3E");
+        }
+        .sidebar-button:nth-child(2)::before {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'%3E%3C/path%3E%3C/svg%3E");
+        }
+        .sidebar-button:nth-child(3)::before {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z'%3E%3C/path%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M15 12a3 3 0 11-6 0 3 3 0 016 0z'%3E%3C/path%3E%3C/svg%3E");
         }
         .logout-button {
+            background-color: rgba(239, 68, 68, 0.2);
+            color: #fecaca;
             margin-top: auto;
-            border-top: 1px solid #475569;
-            padding-top: 15px;
-            color: #e2e8f0;
+            width: calc(100% - 30px);
+            margin-left: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            padding: 12px 15px;
+            transition: all 0.2s ease;
+        }
+        .logout-button:hover {
+            background-color: rgba(239, 68, 68, 0.3);
+        }
+        .logout-button::before {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23fecaca'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1'%3E%3C/path%3E%3C/svg%3E");
         }
         
         /* Main Content Styles */
@@ -91,17 +125,22 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 30px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #e2e8f0;
+            padding: 10px 20px;
+            border-bottom: 1px solid #e0e0e0;
         }
         .header-left {
             display: flex;
             align-items: center;
         }
+        .menu-icon {
+            color: #2196F3;
+            font-size: 24px;
+            cursor: pointer;
+        }
         .header-right {
             display: flex;
             align-items: center;
+            gap: 20px;
         }
         .user-info {
             display: flex;
@@ -303,7 +342,12 @@
             background-color: #dbeafe;
             color: #1e40af;
         }
-        
+        .logo {
+            display: block;
+            max-width: 80px;
+            height: auto;
+            margin: 0 auto;
+        }
         /* Responsive adjustments */
         @media (max-width: 768px) {
             .sidebar {
@@ -332,45 +376,57 @@
 <body>
     <div class="container">
         <!-- Sidebar -->
-        <div class="sidebar">
+        <div class="sidebar" id="sidebar">
+            {% load static %}
+            <img src="{% static 'images/Sky_Group_logo_2020.svg.png' %}" alt="Company Logo" class="logo">
+
             <div class="app-logo">
                 Health<span>Check</span>
             </div>
             <div class="sidebar-buttons">
-                <!-- Dashboard link based on user role -->
-                {% if role == 'engineer' %}
-                    <a href="{% url 'engineer_dashboard' %}" class="sidebar-button">Dashboard</a>
-                {% elif role == 'team_leader' %}
-                    <a href="{% url 'team_leader_dashboard' %}" class="sidebar-button">Dashboard</a>
-                {% elif role == 'department_lead' %}
-                    <a href="{% url 'department_lead_dashboard' %}" class="sidebar-button">Dashboard</a>
-                {% elif role == 'senior_manager' %}
-                    <a href="{% url 'admin_dashboard' %}" class="sidebar-button">Dashboard</a>
+                {% if user.profile.role == 'senior_manager' %}
+                    <a href="{% url 'admin_dashboard' %}" style="text-decoration: none; width: 100%;">
+                        <button class="sidebar-button">Admin Dashboard</button>
+                    </a>
+                    <a href="{% url 'admin_projects' %}" style="text-decoration: none; width: 100%;">
+                        <button class="sidebar-button">Project Management</button>
+                    </a>
                 {% else %}
-                    <a href="{% url 'dashboard' %}" class="sidebar-button">Dashboard</a>
+                    <a href="{% url 'dashboard' %}" style="text-decoration: none; width: 100%;">
+                        <button class="sidebar-button">Dashboard</button>
+                    </a>
+                    <a href="{% url 'team_selection' %}" style="text-decoration: none; width: 100%;">
+                        <button class="sidebar-button">Team Health Checks</button>
+                    </a>
+
+                    <a href="{% url 'project_health' %}" style="text-decoration: none; width: 100%;">
+                        <button class="sidebar-button">Project Health</button>
+                    </a>
                 {% endif %}
-                
-                <a href="{% url 'team_selection' %}" class="sidebar-button active-button">My Teams</a>
-                <a href="{% url 'project_health' %}" class="sidebar-button">Health Checks</a>
-                <a href="{% url 'settings' %}" class="sidebar-button">Settings</a>
+                <button class="sidebar-button active-button">Settings</button>
             </div>
-            <a href="{% url 'logout' %}" class="sidebar-button logout-button">Log Out</a>
+            <a href="{% url 'logout' %}" style="text-decoration: none; margin-top: auto; display: block;" id="logout-link">
+                <button class="sidebar-button logout-button">Log Out</button>
+            </a>
         </div>
+
 
         <!-- Main Content -->
         <div class="main-content">
             <!-- Header -->
             <div class="header">
                 <div class="header-left">
-                    <h1 class="section-title">Team Selection</h1>
+                    <span class="menu-icon" id="toggle-sidebar">≡</span>
                 </div>
                 <div class="header-right">
-                    <div class="user-info">
-                        <div class="user-avatar">
-                            {{ user.username|first|upper }}
-                        </div>
-                        <span>{{ user.username }}</span>
-                    </div>
+                    <span class="notification-icon">🔔</span>
+                    <span class="username-display">Welcome, 
+                        {% if user.first_name %}
+                            {{ user.first_name }} {{ user.last_name }}
+                        {% else %}
+                            {{ username }}
+                        {% endif %}
+                    </span>
                 </div>
             </div>
             

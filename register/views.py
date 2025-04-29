@@ -4,8 +4,27 @@ from .forms import RegisterForm
 from .models import UserProfile
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login as auth_login
+from functools import wraps
+from django.contrib.auth.views import LoginView
+
+def redirect_if_authenticated(view_func):
+    @wraps(view_func)
+    def _wrapped_view(request, *args, **kwargs):
+        if request.user.is_authenticated:
+            # Get user profile and redirect to appropriate dashboard
+            try:
+                profile = UserProfile.objects.get(user=request.user)
+                if profile.role == 'senior_manager':
+                    return redirect('admin_dashboard')
+                else:  # team_member
+                    return redirect('dashboard')
+            except UserProfile.DoesNotExist:
+                return redirect('dashboard')
+        return view_func(request, *args, **kwargs)
+    return _wrapped_view
 
 # Create your views here.
+@redirect_if_authenticated
 def register(response):
     if response.method == "POST":
         form = RegisterForm(response.POST)
@@ -18,11 +37,8 @@ def register(response):
             # Redirect based on user role
             if user.profile.role == 'senior_manager':
                 return redirect("admin_dashboard")
-            elif user.profile.role == 'department_lead':
-                # Department leads are also auto-approved
-                return redirect("dashboard")
-            else:
-                # For team leaders and engineers, check if approval is needed
+            else:  # team_member
+                # For team members, check if approval is needed
                 if user.profile.is_approved:
                     return redirect("dashboard")
                 else:
@@ -65,3 +81,7 @@ def waiting_approval(request):
     except UserProfile.DoesNotExist:
         messages.error(request, "User profile not found.")
         return redirect('login')
+
+@redirect_if_authenticated
+def custom_login(request):
+    return LoginView.as_view(template_name='registration/login.html')(request)

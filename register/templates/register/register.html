@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -147,33 +146,14 @@
                 <label>I am registering as:</label>
                 <div class="role-option">
                     <input type="radio" name="role" id="role_senior_manager" value="senior_manager" {% if role == 'senior_manager' or not role %}checked{% endif %}> 
-                    <label for="role_senior_manager" class="role-label">Senior manager</label>
+                    <label for="role_senior_manager" class="role-label">Senior Manager</label>
                 </div>
                 <div class="role-option">
-                    <input type="radio" name="role" id="role_department_lead" value="department_lead" {% if role == 'department_lead' %}checked{% endif %}> 
-                    <label for="role_department_lead" class="role-label">Department Lead</label>
-                </div>
-                <div class="role-option">
-                    <input type="radio" name="role" id="role_team_leader" value="team_leader" {% if role == 'team_leader' %}checked{% endif %}> 
-                    <label for="role_team_leader" class="role-label">Team Leader</label>
-                </div>
-                <div class="role-option">
-                    <input type="radio" name="role" id="role_engineer" value="engineer" {% if role == 'engineer' %}checked{% endif %}> 
-                    <label for="role_engineer" class="role-label">Engineer</label>
+                    <input type="radio" name="role" id="role_team_member" value="team_member" {% if role == 'team_member' %}checked{% endif %}> 
+                    <label for="role_team_member" class="role-label">Team Member</label>
                 </div>
                 {% if form.role.errors %}
                 <div class="error-text">{{ form.role.errors|join:", " }}</div>
-                {% endif %}
-            </div>
-            
-            <!-- Company Code (Optional for all users) -->
-            <div class="form-group" id="company_code_section">
-                <label for="id_company_code">Company Access Code (Optional)</label>
-                <input type="text" name="company_code" class="form-control {% if form.company_code.errors %}is-invalid{% endif %}" 
-                       id="id_company_code" value="{{ company_code|default:'' }}">
-                <small class="form-text text-muted">Enter the access code if provided by your company admin, or leave blank to join the default company</small>
-                {% if form.company_code.errors %}
-                <div class="error-text">{{ form.company_code.errors|join:", " }}</div>
                 {% endif %}
             </div>
             

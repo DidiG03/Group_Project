@@ -25,9 +25,7 @@ urlpatterns = [
     path("logout/", views.logout_view, name="logout"),  # Custom logout view
     
     # Role-specific dashboards
-    path("engineer-dashboard/", views.engineer_dashboard, name="engineer_dashboard"),
-    path("team-leader-dashboard/", views.team_leader_dashboard, name="team_leader_dashboard"),
-    path("department-lead-dashboard/", views.department_lead_dashboard, name="department_lead_dashboard"),
+    path("admin-dashboard/", views.admin_dashboard, name="admin_dashboard"),
     
     # New team-related URLs
     path("create-team/", views.create_team, name="create_team"),
@@ -45,4 +43,6 @@ urlpatterns = [
     path("manage-health-cards/", views.manage_health_cards, name="manage_health_cards"),
     path("join-team-password/", views.join_team_password, name="join_team_password"),
     path("update-team-password/<int:team_id>/", views.update_team_password, name="update_team_password"),
+    path("assign-department-lead/<int:department_id>/", views.assign_department_lead, name="assign_department_lead"),
+    path("add-team-members/<int:team_id>/", views.add_team_members, name="add_team_members"),
 ]

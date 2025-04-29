@@ -29,8 +29,8 @@ class Company(models.Model):
 
 class UserProfile(models.Model):
     ROLE_CHOICES = [
-        ('admin', 'Admin'),
-        ('employee', 'Employee'),
+        ('senior_manager', 'Senior Manager'),
+        ('team_member', 'Team Member'),
     ]
     
     TECHNICAL_ROLE_CHOICES = [
@@ -76,6 +76,8 @@ class UserProfile(models.Model):
     teams = models.ManyToManyField('main.Team', blank=True, related_name="team_members")
     is_approved = models.BooleanField(default=False, help_text="Whether this user is approved by admin")
     profile_picture = models.ImageField(upload_to='profile_pictures/', blank=True, null=True)
+    is_department_lead = models.BooleanField(default=False, help_text="Is this user a department lead?")
+    is_team_leader = models.BooleanField(default=False, help_text="Is this user a team leader?")
     
     def __str__(self):
         return f"{self.user.username}'s Profile ({self.role})"

@@ -614,6 +614,7 @@
                                     <th>ID</th>
                                     <th>Department Name</th>
                                     <th>Department Code</th>
+                                    <th>Department Lead</th>
                                     <th>Teams</th>
                                     <th>Actions</th>
                                 </tr>
@@ -624,15 +625,22 @@
                                     <td>{{ department.id }}</td>
                                     <td>{{ department.name }}</td>
                                     <td>{{ department.code }}</td>
+                                    <td>
+                                        {% for user in user_profiles %}
+                                            {% if user.is_department_lead and user.department and user.department.id == department.id %}
+                                                {{ user.user.first_name }} {{ user.user.last_name }}
+                                            {% endif %}
+                                        {% endfor %}
+                                    </td>
                                     <td>{{ department.teams.count }}</td>
                                     <td>
-                                        <button class="action-btn">Edit</button>
+                                        <button class="action-btn" onclick="openDepartmentModal({{ department.id }})">Edit</button>
                                         <button class="action-btn delete-btn">Delete</button>
                                     </td>
                                 </tr>
                                 {% empty %}
                                 <tr>
-                                    <td colspan="5">No departments found</td>
+                                    <td colspan="6">No departments found</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -676,6 +684,7 @@
                                     <th>Team Name</th>
                                     <th>Team Code</th>
                                     <th>Department</th>
+                                    <th>Team Leader</th>
                                     <th>Members</th>
                                     <th>Actions</th>
                                 </tr>
@@ -687,15 +696,28 @@
                                     <td>{{ team.name }}</td>
                                     <td>{{ team.code }}</td>
                                     <td>{{ team.department.name }}</td>
-                                    <td>{{ team.team_members.count }}</td>
                                     <td>
-                                        <button class="action-btn">Edit</button>
+                                        {% for member in team.team_members.all %}
+                                            {% if member.is_team_leader and team in member.teams.all %}
+                                                {{ member.user.first_name }} {{ member.user.last_name }}
+                                            {% endif %}
+                                        {% endfor %}
+                                    </td>
+                                    <td>
+                                        {% for member in team.team_members.all %}
+                                            {{ member.user.first_name }} {{ member.user.last_name }}{% if not forloop.last %}, {% endif %}
+                                        {% empty %}
+                                            No members
+                                        {% endfor %}
+                                    </td>
+                                    <td>
+                                        <button class="action-btn" onclick="openTeamModal({{ team.id }})">Edit</button>
                                         <button class="action-btn delete-btn">Delete</button>
                                     </td>
                                 </tr>
                                 {% empty %}
                                 <tr>
-                                    <td colspan="6">No teams found</td>
+                                    <td colspan="7">No teams found</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -845,6 +867,59 @@
         </div>
     </div>
     
+    <!-- Department Edit Modal -->
+    <div id="editDepartmentModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.3); z-index:1000; align-items:center; justify-content:center;">
+      <div style="background:#fff; padding:30px; border-radius:8px; min-width:320px; max-width:90vw;">
+        <h4>Assign Department Lead</h4>
+        <form method="post" action="" id="assignDepartmentLeadForm">
+          {% csrf_token %}
+          <input type="hidden" name="department_id" id="editDepartmentId">
+          <div class="form-group">
+            <label for="department_lead">Select Department Lead</label>
+            <select name="department_lead" id="departmentLeadSelect" class="form-control" required>
+              <option value="">-- Select User --</option>
+              {% for user in user_profiles %}
+                <option value="{{ user.user.id }}">{{ user.user.first_name }} {{ user.user.last_name }} ({{ user.user.username }})</option>
+              {% endfor %}
+            </select>
+          </div>
+          <button type="submit" class="btn-primary">Assign Lead</button>
+          <button type="button" onclick="closeDepartmentModal()" class="btn-secondary" style="margin-left:10px;">Cancel</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Team Edit Modal -->
+    <div id="editTeamModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.3); z-index:1000; align-items:center; justify-content:center;">
+      <div style="background:#fff; padding:30px; border-radius:8px; min-width:320px; max-width:90vw;">
+        <h4>Edit Team</h4>
+        <form method="post" action="" id="addTeamMembersForm">
+          {% csrf_token %}
+          <input type="hidden" name="team_id" id="editTeamId">
+          <div class="form-group">
+            <label for="team_leader">Select Team Leader</label>
+            <select name="team_leader" id="teamLeaderSelect" class="form-control" required>
+              <option value="">-- Select Team Leader --</option>
+              {% for user in user_profiles %}
+                <option value="{{ user.user.id }}">{{ user.user.first_name }} {{ user.user.last_name }} ({{ user.user.username }})</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="team_members">Select Members</label>
+            <select name="team_members" id="teamMembersSelect" class="form-control" multiple required>
+              {% for user in user_profiles %}
+                <option value="{{ user.user.id }}">{{ user.user.first_name }} {{ user.user.last_name }} ({{ user.user.username }})</option>
+              {% endfor %}
+            </select>
+            <small>Select one or more users to add to this team.</small>
+          </div>
+          <button type="submit" class="btn-primary">Save Changes</button>
+          <button type="button" onclick="closeTeamModal()" class="btn-secondary" style="margin-left:10px;">Cancel</button>
+        </form>
+      </div>
+    </div>
+
     <script>
         function openTab(evt, tabName) {
             // Hide all tab content
@@ -898,6 +973,23 @@
                 });
             }, 5000);
         });
+
+        function openDepartmentModal(deptId) {
+          document.getElementById('editDepartmentId').value = deptId;
+          document.getElementById('assignDepartmentLeadForm').action = `/assign-department-lead/${deptId}/`;
+          document.getElementById('editDepartmentModal').style.display = 'flex';
+        }
+        function closeDepartmentModal() {
+          document.getElementById('editDepartmentModal').style.display = 'none';
+        }
+        function openTeamModal(teamId) {
+          document.getElementById('editTeamId').value = teamId;
+          document.getElementById('addTeamMembersForm').action = `/add-team-members/${teamId}/`;
+          document.getElementById('editTeamModal').style.display = 'flex';
+        }
+        function closeTeamModal() {
+          document.getElementById('editTeamModal').style.display = 'none';
+        }
     </script>
 </body>
 </html> 

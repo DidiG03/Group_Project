@@ -16,18 +16,20 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from register import views as v
+from register import views as register_views
 from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('register/', include('register.urls')),
-    path('', include("main.urls")),
-    path('', include("django.contrib.auth.urls")),
+    path("", include("main.urls")),
+    path("register/", register_views.register, name="register"),
+    path("login/", register_views.custom_login, name="login"),
+    path("waiting-approval/", register_views.waiting_approval, name="waiting_approval"),
 ]
 #+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # Serve media files during development
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

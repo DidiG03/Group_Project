@@ -317,6 +317,10 @@
                     <a href="{% url 'dashboard' %}" style="text-decoration: none; width: 100%;">
                         <button class="sidebar-button">Dashboard</button>
                     </a>
+                    <a href="{% url 'team_selection' %}" style="text-decoration: none; width: 100%;">
+                        <button class="sidebar-button">Team Health Checks</button>
+                    </a>
+
                     <a href="{% url 'project_health' %}" style="text-decoration: none; width: 100%;">
                         <button class="sidebar-button">Project Health</button>
                     </a>
@@ -414,17 +418,6 @@
                         </select>
                     </div>
                     
-                    <!-- Teams multi-select dropdown -->
-                    <div class="form-group">
-                        <label for="teams">Teams <small>(You can select multiple teams)</small></label>
-                        <select id="teams" name="teams" class="form-control" multiple size="4">
-                            {% for team in teams %}
-                            <option value="{{ team.id }}" {% if profile.teams.all|dictsort:"id"|dictsortreversed:"id" and team in profile.teams.all %}selected{% endif %}>{{ team.name }}</option>
-                            {% endfor %}
-                        </select>
-                        <small class="form-text text-muted">Hold Ctrl (or Cmd on Mac) while clicking to select multiple teams</small>
-                    </div>
-                    
                     <div class="form-group">
                         <label for="new_password">New Password <small>(leave blank to keep current password)</small></label>
                         <input type="password" id="new_password" name="new_password" class="form-control" 
@@ -434,51 +427,6 @@
                     
                     <button type="submit" class="btn-save" id="save-button" style="background-color: #2196F3; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Save Changes</button>
                 </form>
-                
-                
-                {% if profile and profile.role == 'senior_manager' %}
-                <div class="theme-section">
-                    <h3 class="theme-title">Company Information</h3>
-                    <div class="company-info">
-                        {% if company %}
-                        <div class="form-group">
-                            <label>Company Name</label>
-                            <input type="text" class="form-control" value="{{ company.name }}" readonly>
-                        </div>
-                        <div class="form-group">
-                            <label>Company Access Code (for team members)</label>
-                            <div class="code-display">
-                                <input type="text" class="form-control" value="{{ company.access_code }}" id="access-code" readonly>
-                                <button type="button" class="btn-copy" id="copy-code-btn">Copy</button>
-                            </div>
-                            <p class="helptext">Share this code with employees and managers who need to join your company.</p>
-                        </div>
-                        
-                        <!-- Senior Manager Administrative Options -->
-                        <div class="admin-options" style="margin-top: 30px;">
-                            <h4 style="font-size: 16px; margin-bottom: 15px;">Management Options</h4>
-                            
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                                <a href="{% url 'create_department' %}" class="btn-save" style="text-decoration: none; text-align: center; background-color: #3b82f6;">
-                                    Create Department
-                                </a>
-                                <a href="{% url 'create_team' %}" class="btn-save" style="text-decoration: none; text-align: center; background-color: #3b82f6;">
-                                    Create Team
-                                </a>
-                                <a href="{% url 'manage_health_cards' %}" class="btn-save" style="text-decoration: none; text-align: center; background-color: #8b5cf6;">
-                                    Manage Health Cards
-                                </a>
-                                <a href="{% url 'admin_projects' %}" class="btn-save" style="text-decoration: none; text-align: center; background-color: #8b5cf6;">
-                                    Manage Projects
-                                </a>
-                            </div>
-                        </div>
-                        {% else %}
-                        <p>You haven't created a company yet. Create one when you sign up a new user with the senior manager role.</p>
-                        {% endif %}
-                    </div>
-                </div>
-                {% endif %}
             </div>
         </div>
     </div>

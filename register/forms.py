@@ -6,10 +6,8 @@ from .models import Company, UserProfile
 
 class RegisterForm(UserCreationForm):
     ROLE_CHOICES = [
-        ('senior_manager', 'Senior manager'),
-        ('department_lead', 'Department Lead'),
-        ('team_leader', 'Team Leader'),
-        ('engineer', 'Engineer'),
+        ('senior_manager', 'Senior Manager'),
+        ('team_member', 'Team Member'),
     ]
     
     username = forms.CharField(max_length=150, required=True, help_text="Required. 150 characters or fewer.")
@@ -56,14 +54,14 @@ class RegisterForm(UserCreationForm):
             company_code = self.cleaned_data.get('company_code')
             
             if role == 'senior_manager':
-                # For senior managers, create a new company
+                # For admin, create a new company
                 company = Company.objects.create(
                     name=f"{user.first_name}'s Company",
                     access_code=company_code,
                     created_by=user
                 )
                 
-                # Create a user profile - senior managers are auto-approved
+                # Create a user profile - admin is auto-approved
                 UserProfile.objects.create(
                     user=user,
                     role=role,
@@ -77,8 +75,8 @@ class RegisterForm(UserCreationForm):
                 )
                 
                 # Create a user profile
-                # Only senior managers and department leads are auto-approved
-                is_approved = role in ['senior_manager', 'department_lead']
+                # Only admin is auto-approved
+                is_approved = role == 'senior_manager'
                 
                 UserProfile.objects.create(
                     user=user,

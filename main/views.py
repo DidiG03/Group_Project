@@ -27,14 +27,7 @@ def senior_manager_required(view_func):
                 return view_func(request, *args, **kwargs)
             else:
                 messages.warning(request, "You don't have permission to access the senior manager dashboard.")
-                if profile.role == 'department_lead':
-                    return redirect('department_lead_dashboard')
-                elif profile.role == 'team_leader':
-                    return redirect('team_leader_dashboard')
-                elif profile.role == 'engineer':
-                    return redirect('engineer_dashboard')
-                else:
-                    return redirect('login')
+                return redirect('dashboard')
         except UserProfile.DoesNotExist:
             messages.error(request, "User profile not found. Please contact an administrator.")
             return redirect('login')
@@ -99,12 +92,12 @@ def non_admin_required(view_func):
     @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
         try:
-            if not hasattr(request.user, 'profile') or request.user.profile.role not in ['admin', 'senior_manager']:
+            if not hasattr(request.user, 'profile') or request.user.profile.role not in ['senior_manager']:
                 return view_func(request, *args, **kwargs)
         except Exception as e:
             print(f"Error in non_admin_required: {str(e)}")
             return view_func(request, *args, **kwargs)
-        messages.warning(request, "This page is not accessible for admin users.")
+        messages.warning(request, "This page is not accessible for senior managers.")
         return redirect('admin_dashboard')
     return _wrapped_view
 
@@ -115,7 +108,7 @@ def admin_required(view_func):
     @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
         try:
-            if hasattr(request.user, 'profile') and request.user.profile.role in ['admin', 'senior_manager']:
+            if hasattr(request.user, 'profile') and request.user.profile.role in ['senior_manager']:
                 return view_func(request, *args, **kwargs)
         except Exception as e:
             print(f"Error in admin_required: {str(e)}")
@@ -139,12 +132,8 @@ def home(response):
         # Redirect based on role
         if profile.role == 'senior_manager':
             return redirect('admin_dashboard')
-        elif profile.role == 'department_lead':
-            return redirect('department_lead_dashboard')
-        elif profile.role == 'team_leader':
-            return redirect('team_leader_dashboard')
-        else:  # engineer
-            return redirect('engineer_dashboard')
+        else:  # team_member
+            return redirect('dashboard')
     except UserProfile.DoesNotExist:
         messages.error(response, "User profile not found. Please contact an administrator.")
         return redirect('login')
@@ -160,7 +149,6 @@ def create(response):
 @login_required
 def dashboard(request):
     try:
-        # Debug all roles in the system
         all_roles = UserProfile.objects.values_list('role', flat=True).distinct()
         print(f"All roles in the system: {list(all_roles)}")
         
@@ -169,18 +157,30 @@ def dashboard(request):
             messages.warning(request, "Your account is still pending approval.")
             return redirect('waiting_approval')
         
-        # Debug current user role    
         print(f"Current user: {request.user.username}, Role: {profile.role}")
         
-        # Redirect based on role
         if profile.role == 'senior_manager':
             return redirect('admin_dashboard')
-        elif profile.role == 'department_lead':
-            return redirect('department_lead_dashboard')
-        elif profile.role == 'team_leader':
-            return redirect('team_leader_dashboard')
-        else:  # engineer
-            return redirect('engineer_dashboard')
+        else:
+            user_teams = request.user.profile.teams.all()
+            projects = Project.objects.filter(team__in=user_teams).order_by('-created_at')
+            total_projects = projects.count()
+            active_projects = projects.filter(status='active').count()
+            completed_projects = projects.filter(status='completed').count()
+            has_technical_role = bool(profile.technical_role)
+            # Only allow add project if user is a team member (with is_team_leader) or department lead
+            can_add_project = (profile.is_team_leader or profile.is_department_lead)
+            context = {
+                'user': request.user,
+                'projects': projects,
+                'user_teams': user_teams,
+                'total_projects': total_projects,
+                'active_projects': active_projects,
+                'completed_projects': completed_projects,
+                'has_technical_role': has_technical_role,
+                'can_add_project': can_add_project,
+            }
+            return render(request, "main/dashboard.html", context)
     except UserProfile.DoesNotExist:
         messages.error(request, "User profile not found. Please contact an administrator.")
         return redirect('login')
@@ -192,175 +192,107 @@ def dashboard(request):
 @login_required
 @engineer_required
 def engineer_dashboard(request):
+    try:
+        profile = UserProfile.objects.get(user=request.user)
+        if profile.role != 'engineer':
+            messages.warning(request, "You don't have permission to access the engineer dashboard.")
+            if profile.role == 'senior_manager':
+                return redirect('admin_dashboard')
+            elif profile.role == 'department_lead':
+                return redirect('department_lead_dashboard')
+            elif profile.role == 'team_leader':
+                return redirect('team_leader_dashboard')
+            else:
+                return redirect('dashboard')
+    except UserProfile.DoesNotExist:
+        messages.error(request, "User profile not found.")
+        return redirect('login')
+    
     # Get user's teams
-    user_teams = []
-    if hasattr(request.user, 'profile'):
-        user_teams = request.user.profile.teams.all()
+    user_teams = request.user.profile.teams.all()
     
-    # Get projects data - only show approved projects for the user's teams
-    if user_teams:
-        # If user has teams, show projects from those teams
-        projects = Project.objects.filter(
-            is_approved=True,
-            team__in=user_teams
-        ).order_by('-created_at').distinct()
-    else:
-        # If user has no teams, show all approved projects
-        projects = Project.objects.filter(is_approved=True).order_by('-created_at')
-    
-    # Get user's health check sessions for their teams
-    health_sessions = HealthCheckSession.objects.filter(
-        team__in=user_teams,
-        is_active=True
-    ).order_by('-created_at')
-    
-    # Get stats
-    total_projects = projects.count()
-    active_projects = projects.filter(status='active').count()
-    completed_projects = projects.filter(status='completed').count()
-    
-    # Get teams for dropdown
-    teams = user_teams
+    # Get projects for user's teams
+    projects = Project.objects.filter(team__in=user_teams).order_by('-created_at')
     
     context = {
         'user': request.user,
         'projects': projects,
-        'total_projects': total_projects,
-        'active_projects': active_projects,
-        'completed_projects': completed_projects,
-        'teams': teams,
-        'user_teams': user_teams,
-        'health_sessions': health_sessions,
-        'has_technical_role': hasattr(request.user, 'profile') and request.user.profile.technical_role,
-        'role': 'engineer'
+        'teams': user_teams,
     }
-    
     return render(request, "main/engineer_dashboard.html", context)
 
 # Team Leader dashboard
 @login_required
 @team_leader_required
 def team_leader_dashboard(request):
+    try:
+        profile = UserProfile.objects.get(user=request.user)
+        if profile.role != 'team_leader':
+            messages.warning(request, "You don't have permission to access the team leader dashboard.")
+            if profile.role == 'senior_manager':
+                return redirect('admin_dashboard')
+            elif profile.role == 'department_lead':
+                return redirect('department_lead_dashboard')
+            elif profile.role == 'engineer':
+                return redirect('engineer_dashboard')
+            else:
+                return redirect('dashboard')
+    except UserProfile.DoesNotExist:
+        messages.error(request, "User profile not found.")
+        return redirect('login')
+    
     # Get user's teams
-    user_teams = []
-    if hasattr(request.user, 'profile'):
-        user_teams = request.user.profile.teams.all()
+    user_teams = request.user.profile.teams.all()
     
-    # Get department of user's teams
-    departments = Department.objects.filter(
-        teams__in=user_teams
-    ).distinct()
+    # Get projects for user's teams
+    projects = Project.objects.filter(team__in=user_teams).order_by('-created_at')
     
-    # Get all teams in those departments
-    department_teams = Team.objects.filter(
-        department__in=departments
-    ).distinct()
-    
-    # Get projects data for all teams in the department
-    projects = Project.objects.filter(
-        is_approved=True,
-        team__in=department_teams
-    ).order_by('-created_at').distinct()
-    
-    # Get health check sessions for the team leader's teams
-    health_sessions = HealthCheckSession.objects.filter(
-        team__in=user_teams
-    ).order_by('-created_at')
-    
-    # Get team stats
-    team_members_count = UserProfile.objects.filter(teams__in=user_teams).distinct().count()
-    
-    # Get pending join requests for each team
-    pending_requests = {}
-    for team in user_teams:
-        pending_requests[team.id] = TeamJoinRequest.objects.filter(team=team, status='pending')
+    # Get team join requests for user's teams
+    team_requests = TeamJoinRequest.objects.filter(team__in=user_teams, status='pending')
     
     context = {
         'user': request.user,
         'projects': projects,
-        'departments': departments,
-        'user_teams': user_teams,
-        'department_teams': department_teams,
-        'team_members_count': team_members_count,
-        'health_sessions': health_sessions,
-        'pending_requests': pending_requests,
-        'role': 'team_leader'
+        'teams': user_teams,
+        'team_requests': team_requests,
     }
-    
     return render(request, "main/team_leader_dashboard.html", context)
 
 # Department Lead dashboard
 @login_required
 @department_lead_required
 def department_lead_dashboard(request):
+    try:
+        profile = UserProfile.objects.get(user=request.user)
+        if profile.role != 'department_lead':
+            messages.warning(request, "You don't have permission to access the department lead dashboard.")
+            if profile.role == 'senior_manager':
+                return redirect('admin_dashboard')
+            elif profile.role == 'team_leader':
+                return redirect('team_leader_dashboard')
+            elif profile.role == 'engineer':
+                return redirect('engineer_dashboard')
+            else:
+                return redirect('dashboard')
+    except UserProfile.DoesNotExist:
+        messages.error(request, "User profile not found.")
+        return redirect('login')
+    
     # Get user's department
-    departments = []
-    if hasattr(request.user, 'profile'):
-        # Assuming department leads are associated with departments
-        # We'll get all teams first, then their departments
-        user_teams = request.user.profile.teams.all()
-        departments = Department.objects.filter(
-            teams__in=user_teams
-        ).distinct()
+    department = request.user.profile.department
     
-    # Get all teams in those departments
-    department_teams = Team.objects.filter(
-        department__in=departments
-    ).prefetch_related('team_members').distinct()
+    # Get teams in the department
+    teams = Team.objects.filter(department=department)
     
-    # Get all health check sessions for all teams in the department
-    health_sessions = HealthCheckSession.objects.filter(
-        team__in=department_teams
-    ).order_by('-created_at')
-    
-    # Get all projects in the department
-    department_projects = Project.objects.filter(
-        is_approved=True,
-        team__in=department_teams
-    ).order_by('-created_at').distinct()
-    
-    # Get active projects count
-    active_projects_count = department_projects.filter(status='active').count()
-    
-    # Get stats
-    department_teams_count = department_teams.count()
-    department_members_count = UserProfile.objects.filter(
-        teams__in=department_teams
-    ).distinct().count()
-    
-    # Calculate department health score (average of all session scores)
-    department_health_score = 0
-    if health_sessions.exists():
-        total_score = 0
-        session_count = 0
-        for session in health_sessions:
-            try:
-                # get_average_score returns a value from 1-5, convert to percentage (0-100)
-                raw_score = session.get_average_score()
-                if raw_score is not None:
-                    # Convert 1-5 scale to 0-100 percentage
-                    percentage_score = ((raw_score - 1) / 4) * 100
-                    total_score += percentage_score
-                    session_count += 1
-            except Exception as e:
-                print(f"Error calculating score for session {session.id}: {str(e)}")
-        
-        if session_count > 0:
-            department_health_score = round(total_score / session_count)
+    # Get projects for teams in the department
+    projects = Project.objects.filter(team__in=teams).order_by('-created_at')
     
     context = {
         'user': request.user,
-        'departments': departments,
-        'department_teams': department_teams,
-        'department_teams_count': department_teams_count,
-        'department_members_count': department_members_count,
-        'department_projects': department_projects,
-        'active_projects_count': active_projects_count,
-        'health_sessions': health_sessions,
-        'department_health_score': department_health_score,
-        'role': 'department_lead'
+        'projects': projects,
+        'teams': teams,
+        'department': department,
     }
-    
     return render(request, "main/department_lead_dashboard.html", context)
 
 # Add chat view - protected route
@@ -1692,5 +1624,77 @@ def update_team_password(request, team_id):
             messages.error(request, f"Error updating team password: {str(e)}")
             
     return redirect('team_leader_dashboard')
+
+@login_required
+@senior_manager_required
+def assign_department_lead(request, department_id):
+    if request.method == "POST":
+        user_id = request.POST.get("department_lead")
+        try:
+            user = User.objects.get(id=user_id)
+            profile = UserProfile.objects.get(user=user)
+            department = Department.objects.get(id=department_id)
+            # Set department lead boolean and assign department
+            profile.is_department_lead = True
+            profile.department = department
+            profile.save()
+            messages.success(request, f"{user.get_full_name()} assigned as Department Lead.")
+        except Exception as e:
+            messages.error(request, f"Error assigning department lead: {str(e)}")
+    return redirect("admin_dashboard")
+
+@login_required
+@senior_manager_required
+def add_team_members(request, team_id):
+    if request.method == "POST":
+        user_ids = request.POST.getlist("team_members")
+        team_leader_id = request.POST.get("team_leader")
+        try:
+            team = Team.objects.get(id=team_id)
+            # Assign team leader
+            if team_leader_id:
+                leader_user = User.objects.get(id=team_leader_id)
+                leader_profile = UserProfile.objects.get(user=leader_user)
+                leader_profile.is_team_leader = True
+                leader_profile.teams.add(team)
+                leader_profile.save()
+            # Add members
+            for user_id in user_ids:
+                user = User.objects.get(id=user_id)
+                profile = UserProfile.objects.get(user=user)
+                profile.teams.add(team)
+                profile.save()
+            messages.success(request, "Team leader and members updated.")
+        except Exception as e:
+            messages.error(request, f"Error updating team: {str(e)}")
+    return redirect("admin_dashboard")
+
+# Team Member dashboard
+@login_required
+def team_member_dashboard(request):
+    try:
+        profile = UserProfile.objects.get(user=request.user)
+        if profile.role != 'team_member':
+            messages.warning(request, "You don't have permission to access the team member dashboard.")
+            if profile.role == 'admin':
+                return redirect('admin_dashboard')
+            else:
+                return redirect('dashboard')
+    except UserProfile.DoesNotExist:
+        messages.error(request, "User profile not found.")
+        return redirect('login')
+    
+    # Get user's teams
+    user_teams = request.user.profile.teams.all()
+    
+    # Get projects for user's teams
+    projects = Project.objects.filter(team__in=user_teams).order_by('-created_at')
+    
+    context = {
+        'user': request.user,
+        'projects': projects,
+        'teams': user_teams,
+    }
+    return render(request, "main/team_member_dashboard.html", context)
 
 
