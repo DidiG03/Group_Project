@@ -114,13 +114,12 @@
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23fecaca'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1'%3E%3C/path%3E%3C/svg%3E");
         }
         
-        /* Main Content Styles */
         .main-content {
             flex: 1;
             padding: 20px;
-            margin-left: 250px;
-            width: calc(100% - 250px);
+            overflow-y: auto;
         }
+
         .header {
             display: flex;
             justify-content: space-between;
@@ -395,15 +394,16 @@
                     <a href="{% url 'dashboard' %}" style="text-decoration: none; width: 100%;">
                         <button class="sidebar-button">Dashboard</button>
                     </a>
-                    <a href="{% url 'team_selection' %}" style="text-decoration: none; width: 100%;">
-                        <button class="sidebar-button">Team Health Checks</button>
-                    </a>
-
                     <a href="{% url 'project_health' %}" style="text-decoration: none; width: 100%;">
                         <button class="sidebar-button">Project Health</button>
                     </a>
                 {% endif %}
-                <button class="sidebar-button active-button">Settings</button>
+                <a href="{% url 'team_selection' %}" style="text-decoration: none; width: 100%;">
+                    <button class="sidebar-button active-button">Team Health Checks</button>
+                </a>
+                <a href="{% url 'settings' %}" style="text-decoration: none; width: 100%;">
+                    <button class="sidebar-button">Settings</button>
+                </a>
             </div>
             <a href="{% url 'logout' %}" style="text-decoration: none; margin-top: auto; display: block;" id="logout-link">
                 <button class="sidebar-button logout-button">Log Out</button>
@@ -450,7 +450,6 @@
                         <div class="team-card">
                             <h3 class="team-name">{{ team.name }}</h3>
                             <div class="team-department">{{ team.department.name }}</div>
-                            
                             <div class="session-list">
                                 <h4>Recent Health Checks:</h4>
                                 {% with sessions=team_sessions|get_item:team.id %}
@@ -466,12 +465,13 @@
                                     {% endif %}
                                 {% endwith %}
                             </div>
-                            
                             <div class="team-actions">
-                                <a href="{% url 'create_health_session' %}?team_id={{ team.id }}" class="btn btn-primary">Start New Session</a>
+                                {% if user.profile.role == 'senior_manager' or user.profile.role == 'department_lead' and team.department == user.profile.department or user.profile.role == 'team_leader' and team in user.profile.teams.all %}
+                                    <a href="{% url 'create_health_session' %}?team_id={{ team.id }}" class="btn btn-primary">Start New Session</a>
+                                {% endif %}
                                 <a href="{% url 'team_health_summary' team_id=team.id %}" class="btn btn-secondary">View Summary</a>
                             </div>
-                        </div>
+                        </div>      
                     {% endfor %}
                 </div>
             {% else %}

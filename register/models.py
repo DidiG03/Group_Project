@@ -11,15 +11,10 @@ def generate_access_code():
 # Create your models here.
 class Company(models.Model):
     name = models.CharField(max_length=200)
-    address = models.TextField(blank=True, null=True)
-    phone = models.CharField(max_length=50, blank=True, null=True)
     email = models.EmailField(blank=True, null=True)
     website = models.URLField(blank=True, null=True)
     logo = models.ImageField(upload_to='company_logos/', blank=True, null=True)
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="company")
     created_at = models.DateTimeField(auto_now_add=True)
-    access_code = models.CharField(max_length=10, default=generate_access_code, unique=True, 
-                                  help_text="Code for employees to join company")
     
     class Meta:
         verbose_name_plural = "Companies"
@@ -67,9 +62,9 @@ class UserProfile(models.Model):
     ]
     
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='employee')
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='team_member')
     technical_role = models.CharField(max_length=50, choices=TECHNICAL_ROLE_CHOICES, default='', blank=True)
-    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="employees", null=True, blank=True)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="employees")
     phone = models.CharField(max_length=50, blank=True, null=True)
     position = models.CharField(max_length=100, blank=True, null=True)
     department = models.ForeignKey('main.Department', on_delete=models.SET_NULL, null=True, blank=True, related_name="employees")

@@ -14,27 +14,11 @@ class RegisterForm(UserCreationForm):
     email = forms.EmailField(required=True)
     full_name = forms.CharField(max_length=100, required=True)
     role = forms.ChoiceField(choices=ROLE_CHOICES, required=True, widget=forms.RadioSelect)
-    company_code = forms.CharField(max_length=10, required=False)
     dob = forms.DateField(required=True, widget=forms.DateInput(attrs={'type': 'date'}))
     
     class Meta:
         model = User
-        fields = ['username', 'full_name', 'email', 'password1', 'password2', 'dob', 'role', 'company_code']
-    
-    def clean(self):
-        cleaned_data = super().clean()
-        role = cleaned_data.get('role')
-        company_code = cleaned_data.get('company_code')
-        
-        if company_code:
-            # Only verify the code if one is provided
-            try:
-                # Get the company by access code only
-                company = Company.objects.get(access_code=company_code)
-            except Company.DoesNotExist:
-                self.add_error('company_code', 'Invalid company access code')
-        
-        return cleaned_data
+        fields = ['username', 'full_name', 'email', 'password1', 'password2', 'dob', 'role']
     
     def save(self, commit=True):
         user = super().save(commit=False)
@@ -44,45 +28,37 @@ class RegisterForm(UserCreationForm):
         if len(name_parts) > 1:
             user.last_name = name_parts[1]
         user.email = self.cleaned_data['email']
-        user.username = self.cleaned_data['username']  # Use provided username
+        user.username = self.cleaned_data['username']
         
         if commit:
             user.save()
             
-            # Get the role and company code from the form
+            # Get the role from the form
             role = self.cleaned_data.get('role')
-            company_code = self.cleaned_data.get('company_code')
             
-            if role == 'senior_manager':
-                # For admin, create a new company
+            # Get the default company - create it if it doesn't exist
+            try:
+                company = Company.objects.first()
+                if not company:
+                    company = Company.objects.create(
+                        name='Sky Group',
+                        email='info@skygroup.com',
+                        website='https://skygroup.com'
+                    )
+            except Company.DoesNotExist:
                 company = Company.objects.create(
-                    name=f"{user.first_name}'s Company",
-                    access_code=company_code,
-                    created_by=user
+                    name='Sky Group',
+                    email='info@skygroup.com',
+                    website='https://skygroup.com'
                 )
-                
-                # Create a user profile - admin is auto-approved
-                UserProfile.objects.create(
-                    user=user,
-                    role=role,
-                    company=company,
-                    is_approved=True
-                )
-            else:
-                # For other roles with a company code, use the existing company
-                company = Company.objects.get(
-                    access_code=company_code
-                )
-                
-                # Create a user profile
-                # Only admin is auto-approved
-                is_approved = role == 'senior_manager'
-                
-                UserProfile.objects.create(
-                    user=user,
-                    role=role,
-                    company=company,
-                    is_approved=is_approved
-                )
+            
+            # Create a user profile
+            # Only senior managers are auto-approved
+            UserProfile.objects.create(
+                user=user,
+                role=role,
+                company=company,
+                is_approved=(role == 'senior_manager')
+            )
             
         return user

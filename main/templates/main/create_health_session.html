@@ -256,7 +256,9 @@
                     <div class="form-group">
                         <label>Select Cards for this Session</label>
                         <p>Choose topics that you want the team to vote on:</p>
-                        
+                        {% if user.profile.role == 'senior_manager' %}
+                            <a href="{% url 'manage_health_cards' %}" class="btn btn-primary" style="margin-bottom: 15px;">Add New Card</a>
+                        {% endif %}
                         <div class="cards-container">
                             {% for card in cards %}
                                 <div class="card-item">
