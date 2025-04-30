@@ -19,20 +19,6 @@
         }
         
         /* Sidebar Styles */
-        .app-logo {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 15px 20px;
-            color: white;
-            font-size: 22px;
-            font-weight: bold;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            margin-bottom: 10px;
-        }
-        .app-logo span {
-            color: #3b82f6;
-        }
         .sidebar {
             width: 240px;
             background-color: #4B0D5A;
@@ -96,6 +82,15 @@
         .sidebar-button:nth-child(3)::before {
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z'%3E%3C/path%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M15 12a3 3 0 11-6 0 3 3 0 016 0z'%3E%3C/path%3E%3C/svg%3E");
         }
+        .active-button {
+            background-color: rgba(255, 255, 255, 0.15);
+            color: #ffffff;
+            font-weight: 500;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .active-button::before {
+            opacity: 1 !important;
+        }
         .logout-button {
             background-color: rgba(239, 68, 68, 0.2);
             color: #fecaca;
@@ -112,6 +107,20 @@
         }
         .logout-button::before {
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23fecaca'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1'%3E%3C/path%3E%3C/svg%3E");
+        }
+        .app-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 15px 20px;
+            color: white;
+            font-size: 22px;
+            font-weight: bold;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 10px;
+        }
+        .app-logo span {
+            color: #3b82f6;
         }
         
         .main-content {
@@ -144,6 +153,19 @@
         .user-info {
             display: flex;
             align-items: center;
+            gap: 10px;
+        }
+        .username-display {
+            font-size: 16px;
+            color: #333;
+        }
+        .user-role {
+            font-size: 14px;
+            color: #666;
+            background-color: #f0f0f0;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 500;
         }
         .user-avatar {
             width: 36px;
@@ -201,24 +223,41 @@
             font-weight: 600;
         }
         .session-item {
-            padding: 10px;
-            margin-bottom: 8px;
-            font-size: 14px;
-            background-color: #f8f9fa;
+            background: #f8fafc;
+            padding: 12px;
+            margin-bottom: 10px;
             border-radius: 6px;
-            transition: background-color 0.2s;
-        }
-        .session-item:hover {
-            background-color: #f1f5f9;
-        }
-        .session-date {
-            color: #6b7280;
-            font-size: 12px;
-            margin-top: 3px;
+            border: 1px solid #e2e8f0;
         }
         .session-name {
             font-weight: 500;
-            color: #1f2937;
+            color: #1e293b;
+        }
+        .session-date {
+            font-size: 0.875rem;
+            color: #64748b;
+        }
+        .session-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 2px 8px;
+            border-radius: 9999px;
+        }
+        .status-badge.active {
+            background: #dcfce7;
+            color: #166534;
+        }
+        .status-badge.archived {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .btn-sm {
+            padding: 4px 8px;
+            font-size: 0.875rem;
         }
         
         /* Team Actions */
@@ -370,18 +409,55 @@
                 width: 100%;
             }
         }
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding: 0 20px;
+        }
+        .page-actions {
+            display: flex;
+            gap: 12px;
+        }
+        .btn-icon {
+            margin-right: 8px;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .btn-primary {
+            background-color: #4B0D5A;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+        .btn-primary:hover {
+            background-color: #5c1b6e;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <!-- Sidebar -->
+        {% load static %}
         <div class="sidebar" id="sidebar">
-            {% load static %}
             <img src="{% static 'images/Sky_Group_logo_2020.svg.png' %}" alt="Company Logo" class="logo">
-
+            {% if user.profile.role == 'senior_manager' %}
+            <div class="app-logo">
+                Health<span>Check</span>Admin
+            </div>
+            {% else %}
             <div class="app-logo">
                 Health<span>Check</span>
             </div>
+            {% endif %}
             <div class="sidebar-buttons">
                 {% if user.profile.role == 'senior_manager' %}
                     <a href="{% url 'admin_dashboard' %}" style="text-decoration: none; width: 100%;">
@@ -399,17 +475,14 @@
                     </a>
                 {% endif %}
                 <a href="{% url 'team_selection' %}" style="text-decoration: none; width: 100%;">
-                    <button class="sidebar-button active-button">Team Health Checks</button>
+                    <button class="sidebar-button">Team Health Checks</button>
                 </a>
-                <a href="{% url 'settings' %}" style="text-decoration: none; width: 100%;">
-                    <button class="sidebar-button">Settings</button>
-                </a>
+                <button class="sidebar-button active-button">Settings</button>
             </div>
             <a href="{% url 'logout' %}" style="text-decoration: none; margin-top: auto; display: block;" id="logout-link">
                 <button class="sidebar-button logout-button">Log Out</button>
             </a>
         </div>
-
 
         <!-- Main Content -->
         <div class="main-content">
@@ -419,14 +492,26 @@
                     <span class="menu-icon" id="toggle-sidebar">≡</span>
                 </div>
                 <div class="header-right">
-                    <span class="notification-icon">🔔</span>
-                    <span class="username-display">Welcome, 
-                        {% if user.first_name %}
-                            {{ user.first_name }} {{ user.last_name }}
-                        {% else %}
-                            {{ username }}
-                        {% endif %}
-                    </span>
+                    <div class="user-info">
+                        <span class="username-display">Welcome, 
+                            {% if user.first_name %}
+                                {{ user.first_name }} {{ user.last_name }}
+                            {% else %}
+                                {{ username }}
+                            {% endif %}
+                        </span>
+                        <span class="user-role">
+                            {% if user.profile.role == 'senior_manager' %}
+                                Senior Manager
+                            {% elif user.profile.is_department_lead %}
+                                Department Lead
+                            {% elif user.profile.is_team_leader %}
+                                Team Leader
+                            {% else %}
+                                Member
+                            {% endif %}
+                        </span>
+                    </div>
                 </div>
             </div>
             
@@ -439,10 +524,18 @@
             </div>
             {% endif %}
             
-
-            
             <!-- Team Cards -->
-            <h2 class="section-title">Your Teams</h2>
+            <div class="page-header">
+                <h2 style="color: #2196F3;" class="section-title">Your Teams</h2>
+                {% if user.profile.role == 'senior_manager' %}
+                <div class="page-actions">
+                    <button class="btn btn-primary" id="openCreateCardModal">
+                        <span class="btn-icon">+</span>
+                        Create Card
+                    </button>
+                </div>
+                {% endif %}
+            </div>
             
             {% if user_teams %}
                 <div class="teams-grid">
@@ -458,6 +551,14 @@
                                             <div class="session-item">
                                                 <div class="session-name">{{ session.name }}</div>
                                                 <span class="session-date">{{ session.created_at|date:"M d, Y" }}</span>
+                                                <div class="session-actions" style="margin-top: 8px;">
+                                                    {% if session.is_active %}
+                                                        <span class="status-badge active">Active</span>
+                                                    {% else %}
+                                                        <span class="status-badge archived">Archived</span>
+                                                    {% endif %}
+                                                    <a href="{% url 'team_health_session_summary' session.id %}" class="btn btn-secondary btn-sm">View Summary</a>
+                                                </div>
                                             </div>
                                         {% endfor %}
                                     {% else %}
@@ -466,10 +567,9 @@
                                 {% endwith %}
                             </div>
                             <div class="team-actions">
-                                {% if user.profile.role == 'senior_manager' or user.profile.role == 'department_lead' and team.department == user.profile.department or user.profile.role == 'team_leader' and team in user.profile.teams.all %}
+                                {% if user.profile.is_department_lead and team.department == user.profile.department or user.profile.is_team_leader and team in user.profile.teams.all %}
                                     <a href="{% url 'create_health_session' %}?team_id={{ team.id }}" class="btn btn-primary">Start New Session</a>
                                 {% endif %}
-                                <a href="{% url 'team_health_summary' team_id=team.id %}" class="btn btn-secondary">View Summary</a>
                             </div>
                         </div>      
                     {% endfor %}
@@ -480,6 +580,49 @@
                     <p>Join a team using a team code and password, or request to join a team in Settings.</p>
                     <a href="{% url 'settings' %}" class="btn btn-primary">Go to Settings</a>
                 </div>
+            {% endif %}
+
+            {% if user.profile.role == 'senior_manager' %}
+            <!-- Modal for creating a new card -->
+            <div id="createCardModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); z-index:1000; align-items:center; justify-content:center;">
+                <div style="background:white; padding:30px; border-radius:10px; max-width:400px; margin:auto; position:relative; top:10vh;">
+                    <h3 style="margin-bottom:15px;">Create New Health Check Card</h3>
+                    <form id="createCardForm" method="POST" action="{% url 'manage_health_cards' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="create">
+                        <div class="form-group">
+                            <label for="cardTitle">Title</label>
+                            <input type="text" id="cardTitle" name="title" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="cardDescription">Description</label>
+                            <textarea id="cardDescription" name="description" class="form-control" required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="cardCategory">Category</label>
+                            <input type="text" id="cardCategory" name="category" class="form-control" required>
+                        </div>
+                        <div style="margin-top:15px; display:flex; justify-content:flex-end; gap:10px;">
+                            <button type="button" class="btn btn-secondary" id="closeCreateCardModal">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Create</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                var openBtn = document.getElementById('openCreateCardModal');
+                var closeBtn = document.getElementById('closeCreateCardModal');
+                var modal = document.getElementById('createCardModal');
+                if (openBtn && closeBtn && modal) {
+                    openBtn.onclick = function() { modal.style.display = 'flex'; };
+                    closeBtn.onclick = function() { modal.style.display = 'none'; };
+                    window.onclick = function(event) {
+                        if (event.target == modal) { modal.style.display = 'none'; }
+                    };
+                }
+            });
+            </script>
             {% endif %}
         </div>
     </div>

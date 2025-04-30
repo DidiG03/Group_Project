@@ -13,6 +13,7 @@ import os
 from django.contrib.auth import logout as auth_logout
 from django.utils import timezone
 import logging
+from django.db import transaction
 
 # Initialize logger
 logger = logging.getLogger(__name__)
@@ -470,15 +471,22 @@ def project_health(request):
             health_percentage = 50
         elif project.health == 'good':
             health_percentage = 85
-            
         # Add attributes directly to the project object for template access
         project.health_percentage = health_percentage
-    
+
+    # Provide open sessions for each project (by team)
+    from .models import HealthCheckSession
+    project_sessions = {}
+    for project in projects:
+        sessions = HealthCheckSession.objects.filter(team=project.team, is_active=True)
+        project_sessions[project.id] = sessions
+
     context = {
         'username': request.user.username,
         'user': request.user,
         'projects': projects,
-        'comments': comments
+        'comments': comments,
+        'project_sessions': project_sessions,
     }
     return render(request, "main/project_health.html", context)
 
@@ -1245,6 +1253,19 @@ def create_department(request):
     return redirect('admin_dashboard')
 
 # Team Health Check views
+def ensure_general_voting_session(team, created_by):
+    """Ensure there is always an open 'General Voting' session for the given team."""
+    from .models import HealthCheckSession
+    session, created = HealthCheckSession.objects.get_or_create(
+        team=team,
+        name="General Voting",
+        is_active=True,
+        defaults={
+            'created_by': created_by,
+        }
+    )
+    return session
+
 @login_required
 def team_selection(request):
     """View for users to select a team for health checks"""
@@ -1258,6 +1279,10 @@ def team_selection(request):
     else:
         messages.warning(request, "You need to join a team before you can participate in health checks.")
         return redirect('settings')
+    
+    # Ensure 'General Voting' session exists for each team
+    for team in user_teams:
+        ensure_general_voting_session(team, request.user)
     
     # Get recent health check sessions for each team
     team_sessions = {}
@@ -1277,6 +1302,15 @@ def team_selection(request):
 @login_required
 def create_health_session(request):
     """View for creating a new health check session"""
+    # Check if user is a department lead or team leader
+    if not (request.user.profile.is_department_lead or request.user.profile.is_team_leader):
+        messages.error(request, "Only department leads and team leaders can create health check sessions")
+        return redirect('team_selection')
+
+    from .models import Project
+    projects = Project.objects.all().order_by('name')
+    project_teams = {str(project.id): [project.team.id] for project in projects}
+
     if request.method == "POST":
         team_id = request.POST.get('team_id')
         session_name = request.POST.get('session_name')
@@ -1291,10 +1325,15 @@ def create_health_session(request):
             # Get team
             team = Team.objects.get(id=team_id)
             
-            # Check if user belongs to the team
-            if team not in request.user.profile.teams.all() and request.user.profile.role != 'senior_manager':
-                messages.error(request, "You can only create sessions for teams you belong to")
-                return redirect('team_selection')
+            # Check if user has permission for this team
+            if request.user.profile.is_department_lead:
+                if team.department != request.user.profile.department:
+                    messages.error(request, "You can only create sessions for teams in your department")
+                    return redirect('team_selection')
+            elif request.user.profile.is_team_leader:
+                if team not in request.user.profile.teams.all():
+                    messages.error(request, "You can only create sessions for your own teams")
+                    return redirect('team_selection')
             
             # Create the session
             session = HealthCheckSession.objects.create(
@@ -1316,15 +1355,20 @@ def create_health_session(request):
             messages.error(request, f"Error creating session: {str(e)}")
     
     # For GET requests, show the form
-    user_teams = request.user.profile.teams.all()
+    if request.user.profile.is_department_lead:
+        user_teams = Team.objects.filter(department=request.user.profile.department)
+    else:  # team leader
+        user_teams = request.user.profile.teams.all()
     active_cards = HealthCheckCard.objects.filter(is_active=True)
-    
+
     context = {
         'user': request.user,
         'user_teams': user_teams,
         'cards': active_cards,
+        'projects': projects,
+        'project_teams': project_teams,
     }
-    
+
     return render(request, "main/create_health_session.html", context)
 
 @login_required
@@ -1695,5 +1739,51 @@ def team_member_dashboard(request):
         'teams': user_teams,
     }
     return render(request, "main/team_member_dashboard.html", context)
+
+@login_required
+def team_health_session_summary(request, session_id):
+    """View to display a summary of a specific health check session"""
+    from .models import HealthCheckSession, HealthCheckVote
+    try:
+        session = HealthCheckSession.objects.get(id=session_id)
+        user = request.user
+        # Permission: must be in team, or senior manager
+        is_team_leader = hasattr(user.profile, 'is_team_leader') and user.profile.is_team_leader and session.team in user.profile.teams.all()
+        is_department_lead = hasattr(user.profile, 'is_department_lead') and user.profile.is_department_lead and session.team.department == user.profile.department
+        is_senior_manager = user.profile.role == 'senior_manager'
+        if not (is_team_leader or is_department_lead or is_senior_manager or session.team in user.profile.teams.all()):
+            messages.error(request, "You don't have permission to view this session summary.")
+            return redirect('team_selection')
+        # Archive (end session)
+        if request.method == 'POST' and (is_team_leader or is_department_lead or is_senior_manager):
+            if request.POST.get('archive') == '1':
+                session.is_active = False
+                session.save()
+                messages.success(request, "Session archived.")
+                return redirect('team_health_session_summary', session_id=session.id)
+        # Votes and stats
+        votes = HealthCheckVote.objects.filter(session=session).select_related('user', 'card')
+        vote_stats = {}
+        for card in session.cards.all():
+            card_votes = votes.filter(card=card)
+            pro = card_votes.filter(score__gte=4).count()
+            notpro = card_votes.filter(score__lte=2).count()
+            abstain = card_votes.filter(score=3).count()
+            total = card_votes.count()
+            vote_stats[card.id] = {'pro': pro, 'notpro': notpro, 'abstain': abstain, 'total': total}
+        can_archive = (is_team_leader or is_department_lead or is_senior_manager)
+        context = {
+            'session': session,
+            'votes': votes,
+            'vote_stats': vote_stats,
+            'can_archive': can_archive,
+        }
+        return render(request, "main/team_health_summary.html", context)
+    except HealthCheckSession.DoesNotExist:
+        messages.error(request, "Session not found")
+        return redirect('team_selection')
+    except Exception as e:
+        messages.error(request, f"Error viewing summary: {str(e)}")
+        return redirect('team_selection')
 
 

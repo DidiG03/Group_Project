@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Team Health Session Summary</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f0f0f0; margin: 0; padding: 0; }
+        .container { max-width: 900px; margin: 40px auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); padding: 32px; }
+        h1 { font-size: 2rem; margin-bottom: 10px; }
+        .meta { color: #666; margin-bottom: 24px; }
+        .summary-table { width: 100%; border-collapse: collapse; margin-bottom: 32px; }
+        .summary-table th, .summary-table td { border: 1px solid #e5e7eb; padding: 10px; text-align: left; }
+        .summary-table th { background: #f3f4f6; }
+        .votes-breakdown { margin-bottom: 32px; }
+        .votes-bar { height: 18px; border-radius: 6px; background: #e5e7eb; margin: 6px 0; position: relative; }
+        .votes-bar-inner { height: 100%; border-radius: 6px; }
+        .votes-pro { background: #10b981; }
+        .votes-notpro { background: #ef4444; }
+        .votes-abstain { background: #f59e0b; }
+        .votes-other { background: #6366f1; }
+        .archive-btn { background: #4b0d5a; color: #fff; border: none; padding: 12px 24px; border-radius: 6px; font-size: 1rem; cursor: pointer; margin-top: 20px; }
+        .archive-btn:disabled { background: #ccc; cursor: not-allowed; }
+        .archived-label { color: #b91c1c; font-weight: bold; margin-left: 16px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Session Summary: {{ session.name }}</h1>
+    <div class="meta">
+        <strong>Team:</strong> {{ session.team.name }}<br>
+        <strong>Date:</strong> {{ session.created_at|date:"M d, Y H:i" }}<br>
+        <strong>Status:</strong> {% if not session.is_active %}<span class="archived-label">Archived</span>{% else %}Active{% endif %}
+    </div>
+    <div class="votes-breakdown">
+        <h2>Votes Breakdown</h2>
+        <table class="summary-table">
+            <tr>
+                <th>Card</th>
+                <th>Pro</th>
+                <th>Not Pro</th>
+                <th>Abstain</th>
+                <th>Total Votes</th>
+            </tr>
+            {% for card in session.cards.all %}
+            <tr>
+                <td>{{ card.title }}</td>
+                <td>{{ vote_stats|get_item:card.id|get_item:'pro'|default:0 }}</td>
+                <td>{{ vote_stats|get_item:card.id|get_item:'notpro'|default:0 }}</td>
+                <td>{{ vote_stats|get_item:card.id|get_item:'abstain'|default:0 }}</td>
+                <td>{{ vote_stats|get_item:card.id|get_item:'total'|default:0 }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+    <div>
+        <h2>Who Voted</h2>
+        <table class="summary-table">
+            <tr>
+                <th>User</th>
+                <th>Card</th>
+                <th>Vote</th>
+                <th>Comment</th>
+            </tr>
+            {% for vote in votes %}
+            <tr>
+                <td>{{ vote.user.get_full_name|default:vote.user.username }}</td>
+                <td>{{ vote.card.title }}</td>
+                <td>{{ vote.get_score_display }}</td>
+                <td>{{ vote.comment|default:'-' }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+    {% if can_archive and session.is_active %}
+    <form method="post" style="margin-top: 24px;">
+        {% csrf_token %}
+        <button type="submit" name="archive" value="1" class="archive-btn">End Session & Archive</button>
+    </form>
+    {% elif not session.is_active %}
+    <div class="archived-label">This session is archived.</div>
+    {% endif %}
+</div>
+</body>
+</html> 

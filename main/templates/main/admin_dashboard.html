@@ -394,6 +394,23 @@
         height: auto;
         margin: 0 auto;
         }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .username-display {
+            font-size: 16px;
+            color: #333;
+        }
+        .user-role {
+            font-size: 14px;
+            color: #666;
+            background-color: #f0f0f0;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
@@ -426,14 +443,20 @@
                     <span class="menu-icon" id="toggle-sidebar">≡</span>
                 </div>
                 <div class="header-right">
-                    <span class="notification-icon">🔔</span>
-                    <span class="username-display">Welcome, 
-                        {% if user.first_name %}
-                            {{ user.first_name }} {{ user.last_name }}
-                        {% else %}
-                            {{ username }}
-                        {% endif %}
-                    </span>
+                    <div class="user-info">
+                        <span class="username-display">Welcome, {{ user.first_name }}</span>
+                        <span class="user-role">
+                            {% if user.profile.role == 'senior_manager' %}
+                                Senior Manager
+                            {% elif user.profile.is_department_lead %}
+                                Department Lead
+                            {% elif user.profile.is_team_leader %}
+                                Team Leader
+                            {% else %}
+                                Member
+                            {% endif %}
+                        </span>
+                    </div>
                 </div>
             </div>
             

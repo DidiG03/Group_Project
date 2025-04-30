@@ -45,4 +45,5 @@ urlpatterns = [
     path("update-team-password/<int:team_id>/", views.update_team_password, name="update_team_password"),
     path("assign-department-lead/<int:department_id>/", views.assign_department_lead, name="assign_department_lead"),
     path("add-team-members/<int:team_id>/", views.add_team_members, name="add_team_members"),
+    path("team-health-session-summary/<int:session_id>/", views.team_health_session_summary, name="team_health_session_summary"),
 ]

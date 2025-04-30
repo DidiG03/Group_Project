@@ -501,6 +501,23 @@
             height: auto;
             margin: 0 auto;
         }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .username-display {
+            font-size: 16px;
+            color: #333;
+        }
+        .user-role {
+            font-size: 14px;
+            color: #666;
+            background-color: #f0f0f0;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
@@ -544,14 +561,26 @@
                     <span class="menu-icon" id="toggle-sidebar">≡</span>
                 </div>
                 <div class="header-right">
-                    <span class="notification-icon">🔔</span>
-                    <span class="username-display">Welcome, 
-                        {% if user.first_name %}
-                            {{ user.first_name }} {{ user.last_name }}
-                        {% else %}
-                            {{ username }}
-                        {% endif %}
-                    </span>
+                    <div class="user-info">
+                        <span class="username-display">Welcome, 
+                            {% if user.first_name %}
+                                {{ user.first_name }} {{ user.last_name }}
+                            {% else %}
+                                {{ username }}
+                            {% endif %}
+                        </span>
+                        <span class="user-role">
+                            {% if user.profile.role == 'senior_manager' %}
+                                Senior Manager
+                            {% elif user.profile.is_department_lead %}
+                                Department Lead
+                            {% elif user.profile.is_team_leader %}
+                                Team Leader
+                            {% else %}
+                                Member
+                            {% endif %}
+                        </span>
+                    </div>
                 </div>
             </div>
             
@@ -572,21 +601,29 @@
                 <div class="project-form">
                     <form method="post" action="{% url 'save_project_health' %}" id="health-form" enctype="multipart/form-data">
                         {% csrf_token %}
-                        <div class="form-group">
-                            <label for="project-select">Select Project</label>
-                            <select id="project-select" name="project_id" class="project-select" required onchange="loadProjectHealth(this.value)">
-                                <option value="">-- Select a project --</option>
-                                {% for project in projects %}
-                                <option value="{{ project.id }}" 
-                                    data-health="{{ project.health }}" 
-                                    data-percentage="{{ project.health_percentage }}"
-                                    data-status="{{ project.status }}">
-                                    {{ project.name }}
-                                </option>
-                                {% empty %}
-                                <option value="" disabled>No projects available</option>
-                                {% endfor %}
-                            </select>
+                        <div class="form-group" style="display: flex; gap: 16px; align-items: flex-end;">
+                            <div style="flex:1;">
+                                <label for="project-select">Select Project</label>
+                                <select id="project-select" name="project_id" class="project-select" required onchange="onProjectChange()">
+                                    <option value="">-- Select a project --</option>
+                                    {% for project in projects %}
+                                    <option value="{{ project.id }}"
+                                        data-health="{{ project.health }}"
+                                        data-percentage="{{ project.health_percentage }}"
+                                        data-status="{{ project.status }}">
+                                        {{ project.name }}
+                                    </option>
+                                    {% empty %}
+                                    <option value="" disabled>No projects available</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div style="flex:1;">
+                                <label for="session-select">Select Session</label>
+                                <select id="session-select" name="session_id" class="project-select" required disabled>
+                                    <option value="">-- Select a session --</option>
+                                </select>
+                            </div>
                         </div>
                         
                         <div class="slider-container">
@@ -636,7 +673,7 @@
                             </div>
                         </div>
                         
-                        <button type="submit" class="submit-btn">Save Changes</button>
+                        <button type="submit" class="submit-btn" id="submit-btn" disabled>Save Changes</button>
                     </form>
                 </div>
                 
@@ -864,6 +901,15 @@
                     }
                 }
             });
+            
+            // Initialize project change function
+            onProjectChange();
+            
+            // Add event listener for session change
+            document.getElementById('session-select').addEventListener('change', function() {
+                const submitBtn = document.getElementById('submit-btn');
+                submitBtn.disabled = (this.value === '' || document.getElementById('project-select').value === '');
+            });
         });
         
         // Function to filter comments by project ID
@@ -924,6 +970,30 @@
                 replyFormContainer.style.display = 'none';
             }
         }
+        
+        function onProjectChange() {
+            const projectSelect = document.getElementById('project-select');
+            const sessionSelect = document.getElementById('session-select');
+            const submitBtn = document.getElementById('submit-btn');
+            sessionSelect.innerHTML = '<option value="">-- Select a session --</option>';
+            sessionSelect.disabled = true;
+            submitBtn.disabled = true;
+            const projectId = projectSelect.value;
+            if (!projectId) return;
+            // Get sessions for this project from a JS object
+            const sessionsByProject = JSON.parse(document.getElementById('sessions-json').textContent);
+            const sessions = sessionsByProject[projectId];
+            if (sessions && sessions.length > 0) {
+                sessions.forEach(function(session) {
+                    const opt = document.createElement('option');
+                    opt.value = session.id;
+                    opt.textContent = session.name;
+                    sessionSelect.appendChild(opt);
+                });
+                sessionSelect.disabled = false;
+            }
+        }
     </script>
+    <script type="application/json" id="sessions-json">{{ project_sessions|json_script:"sessions-json" }}</script>
 </body>
 </html> 

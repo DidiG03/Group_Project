@@ -62,3 +62,11 @@ class RegisterForm(UserCreationForm):
             )
             
         return user
+
+    def clean(self):
+        cleaned_data = super().clean()
+        role = cleaned_data.get('role')
+        if role == 'senior_manager':
+            if UserProfile.objects.filter(role='senior_manager').exists():
+                raise forms.ValidationError('A senior manager already exists. Only one senior manager is allowed.')
+        return cleaned_data
