@@ -374,6 +374,31 @@
             height: auto;
             margin: 0 auto;
         }
+        
+        /* Department Teams Section Styles */
+        .department-teams-section {
+            margin-top: 40px;
+            margin-bottom: 30px;
+        }
+        .teams-table {
+            margin-top: 20px;
+            overflow-x: auto;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .team-row:hover {
+            background-color: #f8f9fc;
+        }
+        .member-badge {
+            font-size: 13px;
+            color: #444;
+        }
+        .member-list {
+            max-width: 400px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
     </style>
 </head>
 <body>
@@ -534,13 +559,61 @@
             {% else %}
                 <button class="add-project-btn" id="add-project-btn" title="You are not allowed to add projects" style="background-color: #ccc; cursor: not-allowed;" disabled>+</button>
             {% endif %}
+
+            <!-- Department Teams Section (Only for Department Leads) -->
+            {% if user.profile.is_department_lead %}
+            <div class="department-teams-section">
+                <h2 class="section-title">Department Teams & Members</h2>
+                <div class="teams-table">
+                    <table class="project-table">
+                        <thead>
+                            <tr>
+                                <th>Team Name</th>
+                                <th>Team Leader</th>
+                                <th>Team Members</th>
+                                <th>Projects Count</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for team in department_teams %}
+                            <tr class="team-row">
+                                <td><span class="project-icon">👥</span> {{ team.name }}</td>
+                                <td>
+                                    {% if team.team_leader %}
+                                        {{ team.team_leader.user.get_full_name }}
+                                    {% else %}
+                                        <span style="color: #d42a2a;">No leader assigned</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="member-list">
+                                        {% for member in team.members.all %}
+                                            <span class="member-badge">{{ member.user.get_full_name }}</span>
+                                            {% if not forloop.last %} • {% endif %}
+                                        {% empty %}
+                                            <span style="color: #888;">No members</span>
+                                        {% endfor %}
+                                    </div>
+                                </td>
+                                <td>{{ team.project_set.count }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="empty-projects">No teams found in your department</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
         </div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Hamburger menu toggle
-            document.getElementById('hamburger-menu').addEventListener('click', function() {
+            document.getElementById('toggle-sidebar').addEventListener('click', function() {
                 document.querySelector('.sidebar').classList.toggle('collapsed');
             });
             

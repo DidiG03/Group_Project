@@ -172,6 +172,13 @@ def dashboard(request):
             has_technical_role = bool(profile.technical_role)
             # Only allow add project if user is a team member (with is_team_leader) or department lead
             can_add_project = (profile.is_team_leader or profile.is_department_lead)
+            
+            # Get department teams for department leads
+            department_teams = []
+            if profile.is_department_lead and profile.department:
+                department_teams = Team.objects.filter(department=profile.department)
+                print(f"Department teams for {profile.department}: {list(department_teams.values_list('name', flat=True))}")
+            
             context = {
                 'user': request.user,
                 'projects': projects,
@@ -181,6 +188,7 @@ def dashboard(request):
                 'completed_projects': completed_projects,
                 'has_technical_role': has_technical_role,
                 'can_add_project': can_add_project,
+                'department_teams': department_teams,
             }
             return render(request, "main/dashboard.html", context)
     except UserProfile.DoesNotExist:
