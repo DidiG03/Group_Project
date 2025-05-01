@@ -14,6 +14,7 @@ from django.contrib.auth import logout as auth_logout
 from django.utils import timezone
 import logging
 from django.db import transaction
+import json
 
 # Initialize logger
 logger = logging.getLogger(__name__)
@@ -474,12 +475,51 @@ def project_health(request):
         # Add attributes directly to the project object for template access
         project.health_percentage = health_percentage
 
-    # Provide open sessions for each project (by team)
-    from .models import HealthCheckSession
+    # Get active sessions for each project's team
     project_sessions = {}
+    # Track user votes for each session
+    user_voted_sessions = set()
+    
+    from .models import HealthCheckSession, HealthCheckVote
+    
     for project in projects:
-        sessions = HealthCheckSession.objects.filter(team=project.team, is_active=True)
-        project_sessions[project.id] = sessions
+        sessions = HealthCheckSession.objects.filter(
+            team=project.team,
+            is_active=True
+        ).select_related('team').order_by('-created_at')
+        
+        # Convert to list of dicts for JSON serialization
+        session_list = []
+        for session in sessions:
+            session_dict = {
+                'id': session.id,
+                'name': session.name,
+                'created_at': session.created_at.strftime('%Y-%m-%d %H:%M'),
+                'team_name': session.team.name
+            }
+            
+            # Check if user has already voted in this session
+            # Get project cards for this session
+            project_cards = session.cards.filter(title__icontains=project.name)
+            if project_cards.exists():
+                # Check if user has voted for any of these cards
+                user_vote_exists = HealthCheckVote.objects.filter(
+                    session=session,
+                    card__in=project_cards,
+                    user=request.user
+                ).exists()
+                
+                if user_vote_exists:
+                    session_dict['user_voted'] = True
+                    user_voted_sessions.add(session.id)
+                else:
+                    session_dict['user_voted'] = False
+            else:
+                session_dict['user_voted'] = False
+                
+            session_list.append(session_dict)
+            
+        project_sessions[project.id] = session_list
 
     context = {
         'username': request.user.username,
@@ -487,6 +527,7 @@ def project_health(request):
         'projects': projects,
         'comments': comments,
         'project_sessions': project_sessions,
+        'user_voted_sessions': list(user_voted_sessions),
     }
     return render(request, "main/project_health.html", context)
 
@@ -509,83 +550,153 @@ def save_project_health(request):
         try:
             # Get form data
             project_id = request.POST.get('project_id')
-            health_percentage = request.POST.get('health_percentage')
-            comment = request.POST.get('comment', '')
+            session_id = request.POST.get('session_id')
             
-            # Validate data
-            if not project_id or not health_percentage:
-                messages.error(request, "Missing required fields")
+            # Validate project data
+            if not project_id:
+                messages.error(request, "Missing project ID")
                 return redirect('project_health')
             
-            # Convert percentage to health status
-            health_percentage = int(health_percentage)
-            if health_percentage < 30:
-                health_status = 'poor'
-            elif health_percentage < 70:
-                health_status = 'needs_work'
-            else:
-                health_status = 'good'
-                
             # Get the project
             project = Project.objects.get(id=project_id)
             
-            # Check if the project is being marked as completed early
-            mark_completed = request.POST.get('mark_completed')
-            if mark_completed:
-                completion_date = request.POST.get('completion_date')
-                completion_notes = request.POST.get('completion_notes', '')
+            # Handle different session types
+            if session_id == 'general':
+                # This is general health reporting, update project health
+                health_percentage = request.POST.get('health_percentage')
+                comment = request.POST.get('comment', '')
                 
-                if completion_date:
-                    # Update project status to completed early
-                    project.status = 'completed_early'
-                    project.completed_early_date = completion_date
-                    project.completion_notes = completion_notes
-                    
-                    # Handle file upload if provided
-                    if 'documentation' in request.FILES:
-                        file = request.FILES['documentation']
-                        # Check file size (max 10MB)
-                        if file.size > 10 * 1024 * 1024:
-                            messages.error(request, "File size exceeds the maximum allowed (10MB)")
-                            return redirect('project_health')
-                            
-                        # Check file extension
-                        allowed_extensions = ['.pdf', '.jpg', '.jpeg', '.png']
-                        file_ext = os.path.splitext(file.name)[1].lower()
-                        if file_ext not in allowed_extensions:
-                            messages.error(request, "File type not supported. Please upload PDF or image files only.")
-                            return redirect('project_health')
-                            
-                        # Save the file
-                        project.documentation = file
-                    
-                    # Add a comment about early completion
-                    ProjectComment.objects.create(
-                        project=project,
-                        user=request.user,
-                        text=f"Project marked as completed early on {completion_date}. {completion_notes}"
-                    )
-                    
-                    messages.success(request, f"Project '{project.name}' has been marked as completed early.")
-                else:
-                    messages.error(request, "Completion date is required when marking a project as completed early.")
+                # Validate data
+                if not health_percentage:
+                    messages.error(request, "Missing health percentage")
                     return redirect('project_health')
-            else:
-                # Update project health only
-                project.health = health_status
                 
-                # Add a comment if provided
-                if comment:
-                    ProjectComment.objects.create(
-                        project=project,
+                # Convert percentage to health status
+                health_percentage = int(health_percentage)
+                if health_percentage < 30:
+                    health_status = 'poor'
+                elif health_percentage < 70:
+                    health_status = 'needs_work'
+                else:
+                    health_status = 'good'
+                    
+                # Check if the project is being marked as completed early
+                mark_completed = request.POST.get('mark_completed')
+                if mark_completed:
+                    completion_date = request.POST.get('completion_date')
+                    completion_notes = request.POST.get('completion_notes', '')
+                    
+                    if completion_date:
+                        # Update project status to completed early
+                        project.status = 'completed_early'
+                        project.completed_early_date = completion_date
+                        project.completion_notes = completion_notes
+                        
+                        # Handle file upload if provided
+                        if 'documentation' in request.FILES:
+                            file = request.FILES['documentation']
+                            # Check file size (max 10MB)
+                            if file.size > 10 * 1024 * 1024:
+                                messages.error(request, "File size exceeds the maximum allowed (10MB)")
+                                return redirect('project_health')
+                                
+                            # Check file extension
+                            allowed_extensions = ['.pdf', '.jpg', '.jpeg', '.png']
+                            file_ext = os.path.splitext(file.name)[1].lower()
+                            if file_ext not in allowed_extensions:
+                                messages.error(request, "File type not supported. Please upload PDF or image files only.")
+                                return redirect('project_health')
+                                
+                            # Save the file
+                            project.documentation = file
+                        
+                        # Add a comment about early completion
+                        ProjectComment.objects.create(
+                            project=project,
+                            user=request.user,
+                            text=f"Project marked as completed early on {completion_date}. {completion_notes}"
+                        )
+                        
+                        messages.success(request, f"Project '{project.name}' has been marked as completed early.")
+                    else:
+                        messages.error(request, "Completion date is required when marking a project as completed early.")
+                        return redirect('project_health')
+                else:
+                    # Update project health only
+                    project.health = health_status
+                    
+                    # Add a comment if provided
+                    if comment:
+                        ProjectComment.objects.create(
+                            project=project,
+                            user=request.user,
+                            text=f"Health Update ({health_percentage}%): {comment}"
+                        )
+                        
+                    messages.success(request, f"Project health updated successfully for '{project.name}'")
+                
+                # Save changes
+                project.save()
+            else:
+                # This is a session vote
+                from .models import HealthCheckSession, HealthCheckVote, HealthCheckCard
+                
+                try:
+                    # Get the session
+                    session = HealthCheckSession.objects.get(id=session_id)
+                    
+                    # Get vote data
+                    vote_value = request.POST.get('vote_value')
+                    vote_comment = request.POST.get('vote_comment', '')
+                    
+                    # Validate vote value
+                    if not vote_value:
+                        messages.error(request, "Please select a vote option (Pro, Abstain, or Reject)")
+                        return redirect('project_health')
+                    
+                    # Get or create cards for this session
+                    # First check if there's a card for this project
+                    cards = session.cards.filter(title__icontains=project.name)
+                    
+                    if cards.exists():
+                        # Use existing card
+                        card = cards.first()
+                    else:
+                        # Create a new card for this project
+                        card = HealthCheckCard.objects.create(
+                            title=f"Project: {project.name}",
+                            description=f"Vote on the health status of project {project.name}",
+                            category="Project Health",
+                            is_active=True
+                        )
+                        # Add card to session
+                        session.cards.add(card)
+                    
+                    # Check if user has already voted for this project in this session
+                    existing_vote = HealthCheckVote.objects.filter(
+                        session=session,
+                        card=card,
+                        user=request.user
+                    ).first()
+                    
+                    if existing_vote:
+                        messages.warning(request, "You have already voted on this session. You cannot vote twice on the same session.")
+                        return redirect('project_health')
+                    
+                    # Create the vote
+                    vote = HealthCheckVote.objects.create(
+                        session=session,
+                        card=card,
                         user=request.user,
-                        text=f"Health Update ({health_percentage}%): {comment}"
+                        score=vote_value,
+                        comment=vote_comment
                     )
                     
-                messages.success(request, f"Project health updated successfully for '{project.name}'")
-            
-            # Save changes
-            project.save()
+                    messages.success(request, f"Your vote has been submitted successfully for session '{session.name}'")
+                
+                except HealthCheckSession.DoesNotExist:
+                    messages.error(request, "Session not found")
+                    return redirect('project_health')
             
         except Project.DoesNotExist:
             messages.error(request, "Project not found. Please select a valid project.")
@@ -904,14 +1015,6 @@ def approve_project(request, project_id):
         try:
             project = Project.objects.get(id=project_id)
             
-            # Check if the admin is part of the same company
-            admin_companies = Company.objects.filter(created_by=request.user)
-            creator_profile = UserProfile.objects.get(user=project.created_by)
-            
-            if creator_profile.company not in admin_companies:
-                messages.error(request, "You can only approve projects from your own company.")
-                return redirect('admin_dashboard')
-                
             # Update approval status
             project.is_approved = True
             project.save()
@@ -1280,24 +1383,65 @@ def team_selection(request):
         messages.warning(request, "You need to join a team before you can participate in health checks.")
         return redirect('settings')
     
-    # Ensure 'General Voting' session exists for each team
-    for team in user_teams:
-        ensure_general_voting_session(team, request.user)
-    
-    # Get recent health check sessions for each team
+    # Get all health check sessions for each team, ordered by most recent first
     team_sessions = {}
+    session_counts = {}  # For debugging
+    
     for team in user_teams:
-        sessions = HealthCheckSession.objects.filter(team=team).order_by('-created_at')[:5]
+        sessions = HealthCheckSession.objects.filter(
+            team=team
+        ).select_related('team', 'created_by').order_by('-created_at')
+        
         team_sessions[team.id] = sessions
+        session_counts[team.id] = sessions.count()  # Store count for debugging
+    
+    # Debug message if no sessions found
+    if all(count == 0 for count in session_counts.values()):
+        messages.info(request, "No health check sessions found. Use 'Start New Session' to create one.")
     
     context = {
         'user': request.user,
         'user_teams': user_teams,
         'team_sessions': team_sessions,
+        'session_counts': session_counts,  # Add to context for debugging
         'role': user_role,
     }
     
     return render(request, "main/team_selection.html", context)
+
+@login_required
+def view_health_session(request, session_id):
+    """View to display a health check session and collect votes"""
+    try:
+        session = HealthCheckSession.objects.get(id=session_id)
+        
+        # Check if user belongs to the team
+        if session.team not in request.user.profile.teams.all() and request.user.profile.role != 'senior_manager':
+            messages.error(request, "You can only view sessions for teams you belong to")
+            return redirect('team_selection')
+        
+        # Get user's votes for this session
+        user_votes = HealthCheckVote.objects.filter(session=session, user=request.user)
+        voted_card_ids = [vote.card.id for vote in user_votes]
+        
+        # Prepare context
+        context = {
+            'user': request.user,
+            'session': session,
+            'cards': session.cards.all(),
+            'voted_card_ids': voted_card_ids,
+            'user_votes': {vote.card.id: vote for vote in user_votes},
+            'team_members': session.team.team_members.all(),
+        }
+        
+        return render(request, "main/team_health_summary.html", context)
+        
+    except HealthCheckSession.DoesNotExist:
+        messages.error(request, "Session not found")
+        return redirect('team_selection')
+    except Exception as e:
+        messages.error(request, f"Error viewing session: {str(e)}")
+        return redirect('team_selection')
 
 @login_required
 def create_health_session(request):
@@ -1309,7 +1453,15 @@ def create_health_session(request):
 
     from .models import Project
     projects = Project.objects.all().order_by('name')
-    project_teams = {str(project.id): [project.team.id] for project in projects}
+    
+    # Create a list of project-team mappings
+    project_teams = []
+    for project in projects:
+        project_teams.append({
+            'project_id': project.id,
+            'team_id': project.team.id,
+            'team_name': project.team.name
+        })
 
     if request.method == "POST":
         team_id = request.POST.get('team_id')
@@ -1347,7 +1499,7 @@ def create_health_session(request):
             session.cards.add(*cards)
             
             messages.success(request, f"Health check session '{session_name}' created successfully!")
-            return redirect('view_health_session', session_id=session.id)
+            return redirect('team_selection')
             
         except Team.DoesNotExist:
             messages.error(request, "Team not found")
@@ -1370,89 +1522,6 @@ def create_health_session(request):
     }
 
     return render(request, "main/create_health_session.html", context)
-
-@login_required
-def view_health_session(request, session_id):
-    """View to display a health check session and collect votes"""
-    try:
-        session = HealthCheckSession.objects.get(id=session_id)
-        
-        # Check if user belongs to the team
-        if session.team not in request.user.profile.teams.all() and request.user.profile.role != 'senior_manager':
-            messages.error(request, "You can only view sessions for teams you belong to")
-            return redirect('team_selection')
-        
-        # Get user's votes for this session
-        user_votes = HealthCheckVote.objects.filter(session=session, user=request.user)
-        voted_card_ids = [vote.card.id for vote in user_votes]
-        
-        # Prepare context
-        context = {
-            'user': request.user,
-            'session': session,
-            'cards': session.cards.all(),
-            'voted_card_ids': voted_card_ids,
-            'user_votes': {vote.card.id: vote for vote in user_votes},
-            'team_members': session.team.team_members.all(),
-        }
-        
-        return render(request, "main/view_health_session.html", context)
-        
-    except HealthCheckSession.DoesNotExist:
-        messages.error(request, "Session not found")
-        return redirect('team_selection')
-    except Exception as e:
-        messages.error(request, f"Error viewing session: {str(e)}")
-        return redirect('team_selection')
-
-@login_required
-def submit_vote(request):
-    """API view to submit a vote for a card"""
-    if request.method != "POST":
-        return JsonResponse({"error": "Only POST requests are allowed"}, status=405)
-    
-    try:
-        session_id = request.POST.get('session_id')
-        card_id = request.POST.get('card_id')
-        score = request.POST.get('score')
-        comment = request.POST.get('comment', '')
-        
-        # Validate data
-        if not session_id or not card_id or not score:
-            return JsonResponse({"error": "Missing required fields"}, status=400)
-        
-        # Get session and card
-        session = HealthCheckSession.objects.get(id=session_id)
-        card = HealthCheckCard.objects.get(id=card_id)
-        
-        # Check if user belongs to the team
-        if session.team not in request.user.profile.teams.all() and request.user.profile.role != 'senior_manager':
-            return JsonResponse({"error": "You can only vote in sessions for teams you belong to"}, status=403)
-        
-        # Create or update vote
-        vote, created = HealthCheckVote.objects.update_or_create(
-            session=session,
-            card=card,
-            user=request.user,
-            defaults={
-                'score': score,
-                'comment': comment
-            }
-        )
-        
-        # Return success
-        return JsonResponse({
-            "success": True, 
-            "message": "Vote submitted successfully",
-            "created": created
-        })
-        
-    except HealthCheckSession.DoesNotExist:
-        return JsonResponse({"error": "Session not found"}, status=404)
-    except HealthCheckCard.DoesNotExist:
-        return JsonResponse({"error": "Card not found"}, status=404)
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
 
 @login_required
 def team_health_summary(request, team_id):
@@ -1785,5 +1854,54 @@ def team_health_session_summary(request, session_id):
     except Exception as e:
         messages.error(request, f"Error viewing summary: {str(e)}")
         return redirect('team_selection')
+
+@login_required
+def submit_vote(request):
+    """API view to submit a vote for a card"""
+    if request.method != "POST":
+        return JsonResponse({"error": "Only POST requests are allowed"}, status=405)
+    
+    try:
+        session_id = request.POST.get('session_id')
+        card_id = request.POST.get('card_id')
+        score = request.POST.get('score')
+        comment = request.POST.get('comment', '')
+        
+        # Validate data
+        if not session_id or not card_id or not score:
+            return JsonResponse({"error": "Missing required fields"}, status=400)
+        
+        # Get session and card
+        session = HealthCheckSession.objects.get(id=session_id)
+        card = HealthCheckCard.objects.get(id=card_id)
+        
+        # Check if user belongs to the team
+        if session.team not in request.user.profile.teams.all() and request.user.profile.role != 'senior_manager':
+            return JsonResponse({"error": "You can only vote in sessions for teams you belong to"}, status=403)
+        
+        # Create or update vote
+        vote, created = HealthCheckVote.objects.update_or_create(
+            session=session,
+            card=card,
+            user=request.user,
+            defaults={
+                'score': score,
+                'comment': comment
+            }
+        )
+        
+        # Return success
+        return JsonResponse({
+            "success": True, 
+            "message": "Vote submitted successfully",
+            "created": created
+        })
+        
+    except HealthCheckSession.DoesNotExist:
+        return JsonResponse({"error": "Session not found"}, status=404)
+    except HealthCheckCard.DoesNotExist:
+        return JsonResponse({"error": "Card not found"}, status=404)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
 
 

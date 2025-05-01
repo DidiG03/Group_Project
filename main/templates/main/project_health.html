@@ -518,6 +518,62 @@
             border-radius: 4px;
             font-weight: 500;
         }
+        
+        /* Already voted styles */
+        .already-voted {
+            color: #9ca3af;
+            font-style: italic;
+            background-color: #f5f5f5;
+        }
+        option:disabled {
+            color: #9ca3af;
+        }
+        
+        /* Vote Buttons Styles */
+        .vote-btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            color: white;
+        }
+        .vote-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .vote-btn.active {
+            box-shadow: 0 0 0 3px white, 0 0 0 6px currentColor;
+        }
+        .vote-pro {
+            background-color: #10b981;
+        }
+        .vote-pro:hover {
+            background-color: #059669;
+        }
+        .vote-abstain {
+            background-color: #f59e0b;
+        }
+        .vote-abstain:hover {
+            background-color: #d97706;
+        }
+        .vote-reject {
+            background-color: #ef4444;
+        }
+        .vote-reject:hover {
+            background-color: #dc2626;
+        }
+        .vote-icon {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
     </style>
 </head>
 <body>
@@ -622,6 +678,7 @@
                                 <label for="session-select">Select Session</label>
                                 <select id="session-select" name="session_id" class="project-select" required disabled>
                                     <option value="">-- Select a session --</option>
+                                    <option value="general">General Voting</option>
                                 </select>
                             </div>
                         </div>
@@ -641,6 +698,32 @@
                             <div class="form-group">
                                 <label for="health-comment">Comment</label>
                                 <textarea id="health-comment" name="comment" class="form-control" rows="3" placeholder="Add your justification for this health assessment..."></textarea>
+                            </div>
+                        </div>
+                        
+                        <!-- Vote Buttons for Session Voting -->
+                        <div id="session-voting-container" style="display: none; margin-top: 20px; margin-bottom: 20px;">
+                            <div style="text-align: center; margin-bottom: 15px; font-weight: bold; color: #4B0D5A;">
+                                Cast your vote for this session
+                            </div>
+                            <div style="display: flex; justify-content: space-between; gap: 15px;">
+                                <input type="hidden" name="vote_value" id="vote-value" value="">
+                                <button type="button" class="vote-btn vote-pro" onclick="setVote(5)">
+                                    <span class="vote-icon">✓</span>
+                                    Pro
+                                </button>
+                                <button type="button" class="vote-btn vote-abstain" onclick="setVote(3)">
+                                    <span class="vote-icon">○</span>
+                                    Abstain
+                                </button>
+                                <button type="button" class="vote-btn vote-reject" onclick="setVote(1)">
+                                    <span class="vote-icon">✗</span>
+                                    Reject
+                                </button>
+                            </div>
+                            <div class="form-group" style="margin-top: 15px;">
+                                <label for="vote-comment">Your Reasoning</label>
+                                <textarea id="vote-comment" name="vote_comment" class="form-control" rows="3" placeholder="Explain your vote..."></textarea>
                             </div>
                         </div>
                         
@@ -907,8 +990,33 @@
             
             // Add event listener for session change
             document.getElementById('session-select').addEventListener('change', function() {
-                const submitBtn = document.getElementById('submit-btn');
-                submitBtn.disabled = (this.value === '' || document.getElementById('project-select').value === '');
+                onSessionChange();
+            });
+            
+            // Add event listener for form submission validation
+            document.getElementById('health-form').addEventListener('submit', function(event) {
+                const sessionSelect = document.getElementById('session-select');
+                const voteValue = document.getElementById('vote-value');
+                
+                // Check if a session is selected
+                if (sessionSelect.value === '') {
+                    event.preventDefault();
+                    alert('Please select a session.');
+                    return false;
+                }
+                
+                // For non-general sessions, ensure a vote has been cast
+                if (sessionSelect.value !== 'general' && voteValue.value === '') {
+                    event.preventDefault();
+                    alert('Please cast your vote (Pro, Abstain, or Reject).');
+                    return false;
+                }
+                
+                // Confirm submission
+                if (!confirm('Are you sure you want to submit your vote?')) {
+                    event.preventDefault();
+                    return false;
+                }
             });
         });
         
@@ -975,25 +1083,151 @@
             const projectSelect = document.getElementById('project-select');
             const sessionSelect = document.getElementById('session-select');
             const submitBtn = document.getElementById('submit-btn');
+            const sliderContainer = document.querySelector('.slider-container');
+            const sessionVotingContainer = document.getElementById('session-voting-container');
+            
+            // Reset session select
             sessionSelect.innerHTML = '<option value="">-- Select a session --</option>';
             sessionSelect.disabled = true;
             submitBtn.disabled = true;
+            
             const projectId = projectSelect.value;
             if (!projectId) return;
-            // Get sessions for this project from a JS object
-            const sessionsByProject = JSON.parse(document.getElementById('sessions-json').textContent);
-            const sessions = sessionsByProject[projectId];
-            if (sessions && sessions.length > 0) {
-                sessions.forEach(function(session) {
-                    const opt = document.createElement('option');
-                    opt.value = session.id;
-                    opt.textContent = session.name;
-                    sessionSelect.appendChild(opt);
-                });
-                sessionSelect.disabled = false;
+            
+            // Add General Voting option
+            const generalOption = document.createElement('option');
+            generalOption.value = 'general';
+            generalOption.textContent = 'General Voting';
+            sessionSelect.appendChild(generalOption);
+            
+            // Get sessions for this project from the JSON data
+            try {
+                // First attempt to get the proper data from the JSON script tag
+                let projectSessions = {};
+                
+                // Django's json_script creates an element with the ID specified
+                const sessionsJsonElement = document.getElementById("sessions-json");
+                
+                if (sessionsJsonElement) {
+                    // This is the correct way to get data from json_script
+                    projectSessions = JSON.parse(sessionsJsonElement.textContent);
+                    
+                    // Convert project_id to string for safe comparison
+                    const projectIdStr = projectId.toString();
+                    const sessions = projectSessions[projectIdStr] || [];
+                    
+                    // Add session options
+                    sessions.forEach(function(session) {
+                        const option = document.createElement('option');
+                        option.value = session.id;
+                        
+                        // Check if user has already voted for this session
+                        if (session.user_voted) {
+                            option.textContent = `${session.name} (${session.team_name}) - Already Voted`;
+                            option.disabled = true;
+                            option.classList.add('already-voted');
+                        } else {
+                            option.textContent = `${session.name} (${session.team_name})`;
+                        }
+                        
+                        sessionSelect.appendChild(option);
+                    });
+                    
+                    console.log(`Found ${sessions.length} sessions for project ${projectId}`);
+                } else {
+                    console.error("sessions-json element not found");
+                }
+            } catch (error) {
+                console.error("Error parsing sessions JSON data:", error);
+            }
+            
+            // Always enable the session dropdown
+            sessionSelect.disabled = false;
+            
+            // Load health data for the selected project
+            loadProjectHealth(projectId);
+        }
+        
+        // Handle session selection change
+        function onSessionChange() {
+            const sessionSelect = document.getElementById('session-select');
+            const sliderContainer = document.querySelector('.slider-container');
+            const sessionVotingContainer = document.getElementById('session-voting-container');
+            const earlyCmpContainer = document.querySelector('.early-completion-container');
+            
+            // Check if the selected option is disabled (already voted)
+            const selectedOption = sessionSelect.options[sessionSelect.selectedIndex];
+            if (selectedOption.disabled) {
+                alert("You have already voted on this session. You cannot vote twice on the same session.");
+                // Reset to the first non-disabled option
+                for (let i = 0; i < sessionSelect.options.length; i++) {
+                    if (!sessionSelect.options[i].disabled) {
+                        sessionSelect.selectedIndex = i;
+                        break;
+                    }
+                }
+                return;
+            }
+            
+            if (sessionSelect.value === 'general') {
+                // Show slider for general voting
+                sliderContainer.style.display = 'block';
+                sessionVotingContainer.style.display = 'none';
+                earlyCmpContainer.style.display = 'block';
+                
+                // Clear vote selection
+                document.getElementById('vote-value').value = '';
+                resetVoteButtons();
+            } else if (sessionSelect.value !== '') {
+                // Show voting buttons for session voting
+                sliderContainer.style.display = 'none';
+                sessionVotingContainer.style.display = 'block';
+                earlyCmpContainer.style.display = 'none';
+                
+                // Clear slider value
+                document.getElementById('health-slider').value = 50;
+                updateSliderAppearance(50);
+            } else {
+                // Hide both
+                sliderContainer.style.display = 'none';
+                sessionVotingContainer.style.display = 'none';
+                earlyCmpContainer.style.display = 'none';
+            }
+            
+            // Enable submit button if a session is selected
+            document.getElementById('submit-btn').disabled = (sessionSelect.value === '');
+        }
+        
+        // Set vote value and update button styles
+        function setVote(value) {
+            document.getElementById('vote-value').value = value;
+            
+            // Update button classes
+            resetVoteButtons();
+            
+            // Add active class to selected button
+            let activeButton;
+            if (value === 5) {
+                activeButton = document.querySelector('.vote-pro');
+            } else if (value === 3) {
+                activeButton = document.querySelector('.vote-abstain');
+            } else if (value === 1) {
+                activeButton = document.querySelector('.vote-reject');
+            }
+            
+            if (activeButton) {
+                activeButton.classList.add('active');
             }
         }
+        
+        // Reset vote button active states
+        function resetVoteButtons() {
+            document.querySelectorAll('.vote-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+        }
     </script>
-    <script type="application/json" id="sessions-json">{{ project_sessions|json_script:"sessions-json" }}</script>
+    <!-- Ensure project_sessions is formatted correctly as JSON for JavaScript to access -->
+    {{ project_sessions|json_script:"sessions-json" }}
 </body>
 </html> 

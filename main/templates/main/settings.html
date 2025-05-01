@@ -319,17 +319,21 @@
                     <a href="{% url 'admin_projects' %}" style="text-decoration: none; width: 100%;">
                         <button class="sidebar-button">Project Management</button>
                     </a>
+                    <a href="{% url 'team_selection' %}" style="text-decoration: none; width: 100%;">
+                        <button class="sidebar-button">Team Health Checks</button>
+                    </a>
                 {% else %}
                     <a href="{% url 'dashboard' %}" style="text-decoration: none; width: 100%;">
                         <button class="sidebar-button">Dashboard</button>
+                    </a>
+                    <a href="{% url 'team_selection' %}" style="text-decoration: none; width: 100%;">
+                        <button class="sidebar-button">Team Health Checks</button>
                     </a>
                     <a href="{% url 'project_health' %}" style="text-decoration: none; width: 100%;">
                         <button class="sidebar-button">Project Health</button>
                     </a>
                 {% endif %}
-                <a href="{% url 'team_selection' %}" style="text-decoration: none; width: 100%;">
-                    <button class="sidebar-button">Team Health Checks</button>
-                </a>
+
                 <button class="sidebar-button active-button">Settings</button>
             </div>
             <a href="{% url 'logout' %}" style="text-decoration: none; margin-top: auto; display: block;" id="logout-link">

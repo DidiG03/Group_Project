@@ -11,7 +11,13 @@ def get_item(dictionary, key):
     """
     if dictionary is None:
         return None
-    return dictionary.get(str(key))
+    
+    # Try both integer and string keys
+    try:
+        int_key = int(key)
+        return dictionary.get(int_key, dictionary.get(str(key)))
+    except (ValueError, TypeError):
+        return dictionary.get(str(key))
 
 @register.filter
 def get_health_color(health):

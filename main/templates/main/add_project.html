@@ -11,13 +11,20 @@
             padding: 0;
             background-color: #f0f0f0;
         }
+        .logo {
+            display: block;
+            max-width: 80px;
+            height: auto;
+            margin: 0 auto;
+        }
         .container {
             display: flex;
             height: 100vh;
         }
+        /* Sidebar Styles */
         .sidebar {
             width: 240px;
-            background-color: #1e293b;
+            background-color: #4B0D5A;
             padding: 20px 0;
             display: flex;
             flex-direction: column;
@@ -58,6 +65,52 @@
             background-color: rgba(255, 255, 255, 0.1);
             transform: translateX(3px);
         }
+        .sidebar-button::before {
+            content: "";
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            margin-right: 10px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            opacity: 0.8;
+        }
+        .sidebar-button:nth-child(1)::before {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6'%3E%3C/path%3E%3C/svg%3E");
+        }
+        .sidebar-button:nth-child(2)::before {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'%3E%3C/path%3E%3C/svg%3E");
+        }
+        .sidebar-button:nth-child(3)::before {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z'%3E%3C/path%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M15 12a3 3 0 11-6 0 3 3 0 016 0z'%3E%3C/path%3E%3C/svg%3E");
+        }
+        .active-button {
+            background-color: rgba(255, 255, 255, 0.15);
+            color: #ffffff;
+            font-weight: 500;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .active-button::before {
+            opacity: 1 !important;
+        }
+        .logout-button {
+            background-color: rgba(239, 68, 68, 0.2);
+            color: #fecaca;
+            margin-top: auto;
+            width: calc(100% - 30px);
+            margin-left: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            padding: 12px 15px;
+            transition: all 0.2s ease;
+        }
+        .logout-button:hover {
+            background-color: rgba(239, 68, 68, 0.3);
+        }
+        .logout-button::before {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23fecaca'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1'%3E%3C/path%3E%3C/svg%3E");
+        }
         .app-logo {
             display: flex;
             align-items: center;
@@ -72,6 +125,13 @@
         .app-logo span {
             color: #3b82f6;
         }
+        
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
         .main-content {
             flex: 1;
             padding: 20px;
@@ -194,32 +254,52 @@
 <body>
     <div class="container">
         <!-- Sidebar -->
-        <div class="sidebar">
+        {% load static %}
+        <div class="sidebar" id="sidebar">
+            <img src="{% static 'images/Sky_Group_logo_2020.svg.png' %}" alt="Company Logo" class="logo">
+            {% if user.profile.role == 'senior_manager' %}
+            <div class="app-logo">
+                Health<span>Check</span>Admin
+            </div>
+            {% else %}
             <div class="app-logo">
                 Health<span>Check</span>
             </div>
+            {% endif %}
             <div class="sidebar-buttons">
-                <a href="{% url 'dashboard' %}" style="text-decoration: none; width: 100%;">
-                    <button class="sidebar-button">Dashboard</button>
-                </a>
-                <a href="{% url 'project_health' %}" style="text-decoration: none; width: 100%;">
-                    <button class="sidebar-button">Project Health</button>
-                </a>
-                <a href="{% url 'team_selection' %}" style="text-decoration: none; width: 100%;">
-                    <button class="sidebar-button">Team Health Checks</button>
-                </a>
-                <a href="{% url 'settings' %}" style="text-decoration: none; width: 100%;">
-                    <button class="sidebar-button">Settings</button>
-                </a>
+                {% if user.profile.role == 'senior_manager' %}
+                    <a href="{% url 'admin_dashboard' %}" style="text-decoration: none; width: 100%;">
+                        <button class="sidebar-button">Admin Dashboard</button>
+                    </a>
+                    <a href="{% url 'admin_projects' %}" style="text-decoration: none; width: 100%;">
+                        <button class="sidebar-button">Project Management</button>
+                    </a>
+                    <a href="{% url 'team_selection' %}" style="text-decoration: none; width: 100%;">
+                        <button class="sidebar-button">Team Health Checks</button>
+                    </a>
+                {% else %}
+                    <a href="{% url 'dashboard' %}" style="text-decoration: none; width: 100%;">
+                        <button class="sidebar-button">Dashboard</button>
+                    </a>
+                    <a href="{% url 'team_selection' %}" style="text-decoration: none; width: 100%;">
+                        <button class="sidebar-button">Team Health Checks</button>
+                    </a>
+                    <a href="{% url 'project_health' %}" style="text-decoration: none; width: 100%;">
+                        <button class="sidebar-button">Project Health</button>
+                    </a>
+                {% endif %}
+                <button class="sidebar-button">Settings</button>
             </div>
-            <a href="{% url 'logout' %}" class="sidebar-button logout-button" id="logout-link">Log Out</a>
+            <a href="{% url 'logout' %}" style="text-decoration: none; margin-top: auto; display: block;" id="logout-link">
+                <button class="sidebar-button logout-button">Log Out</button>
+            </a>
         </div>
 
         <!-- Main content -->
         <div class="main-content">
             <div class="header">
                 <div class="header-left">
-                    <h1>Add New Project</h1>
+                    <h2 style="color: #2196F3;">Add New Project</h2>
                 </div>
                 <div class="header-right">
                     <span class="username-display">Welcome, {{ user.first_name }}</span>

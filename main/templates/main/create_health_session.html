@@ -270,18 +270,22 @@
                     <a href="{% url 'admin_projects' %}" style="text-decoration: none; width: 100%;">
                         <button class="sidebar-button">Project Management</button>
                     </a>
+                    <a href="{% url 'team_selection' %}" style="text-decoration: none; width: 100%;">
+                        <button class="sidebar-button">Team Health Checks</button>
+                    </a>
                 {% else %}
                     <a href="{% url 'dashboard' %}" style="text-decoration: none; width: 100%;">
                         <button class="sidebar-button">Dashboard</button>
+                    </a>
+                    <a href="{% url 'team_selection' %}" style="text-decoration: none; width: 100%;">
+                        <button class="sidebar-button">Team Health Checks</button>
                     </a>
                     <a href="{% url 'project_health' %}" style="text-decoration: none; width: 100%;">
                         <button class="sidebar-button">Project Health</button>
                     </a>
                 {% endif %}
-                <a href="{% url 'team_selection' %}" style="text-decoration: none; width: 100%;">
-                    <button class="sidebar-button">Team Health Checks</button>
-                </a>
-                <button class="sidebar-button active-button">Settings</button>
+
+                <button class="sidebar-button">Settings</button>
             </div>
             <a href="{% url 'logout' %}" style="text-decoration: none; margin-top: auto; display: block;" id="logout-link">
                 <button class="sidebar-button logout-button">Log Out</button>
@@ -297,13 +301,12 @@
                 </div>
                 <div class="header-right">
                     <div class="user-info">
-                        <div class="user-avatar">👤</div>
                         <span class="username-display">Welcome, {{ user.first_name }}</span>
                     </div>
                 </div>
             </div>
 
-            <h1 class="section-title">Create a New Health Check Session</h1>
+            <h2 style="color: #2196F3;" class="section-title">Create a New Health Check Session</h2>
             
             <div class="form-container">
                 <form method="post" action="{% url 'create_health_session' %}">
@@ -314,7 +317,9 @@
                         <select id="project_id" name="project_id" class="form-control" required>
                             <option value="">Select a project</option>
                             {% for project in projects %}
-                                <option value="{{ project.id }}">{{ project.name }}</option>
+                                <option value="{{ project.id }}" data-team-id="{{ project.team.id }}" data-team-name="{{ project.team.name }}">
+                                    {{ project.name }}
+                                </option>
                             {% endfor %}
                         </select>
                     </div>
@@ -322,9 +327,6 @@
                         <label for="team_id">Select Team</label>
                         <select id="team_id" name="team_id" class="form-control" required disabled>
                             <option value="">Select a team</option>
-                            {% for team in user_teams %}
-                                <option value="{{ team.id }}">{{ team.name }}</option>
-                            {% endfor %}
                         </select>
                     </div>
                     
@@ -364,22 +366,13 @@
         </div>
     </div>
 
-    <script type="application/json" id="project-teams-json">{{ project_teams|json_script:"project-teams-json" }}</script>
+    <script type="application/json" id="project-teams-json">{{ project_teams|safe }}</script>
     <script type="application/json" id="user-teams-json">[{% for team in user_teams %}{id: {{ team.id }}, name: "{{ team.name|escapejs }}"}{% if not forloop.last %},{% endif %}{% endfor %}]</script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Hamburger menu toggle
             document.getElementById('hamburger-menu').addEventListener('click', function() {
                 document.querySelector('.sidebar').classList.toggle('collapsed');
-            });
-            
-            // Navigation buttons
-            document.getElementById('dashboard-btn').addEventListener('click', function() {
-                window.location.href = "{% url 'dashboard' %}";
-            });
-            
-            document.getElementById('settings-btn').addEventListener('click', function() {
-                window.location.href = "{% url 'settings' %}";
             });
             
             // Logout confirmation
@@ -391,42 +384,49 @@
                 }
             });
 
-            const projectTeams = JSON.parse(document.getElementById('project-teams-json').textContent);
-            const userTeams = JSON.parse(document.getElementById('user-teams-json').textContent);
+            // Project and team selection handling
             const projectSelect = document.getElementById('project_id');
             const teamSelect = document.getElementById('team_id');
+            
             projectSelect.addEventListener('change', function() {
-                const selectedProject = this.value;
                 teamSelect.innerHTML = '<option value="">Select a team</option>';
                 teamSelect.disabled = true;
-                if (selectedProject && projectTeams[selectedProject]) {
-                    const allowedTeamIds = projectTeams[selectedProject].map(String);
-                    userTeams.forEach(function(team) {
-                        if (allowedTeamIds.includes(String(team.id))) {
-                            const opt = document.createElement('option');
-                            opt.value = team.id;
-                            opt.textContent = team.name;
-                            teamSelect.appendChild(opt);
-                        }
-                    });
+                
+                const selectedOption = this.options[this.selectedIndex];
+                if (!selectedOption || !selectedOption.value) return;
+                
+                const teamId = selectedOption.getAttribute('data-team-id');
+                const teamName = selectedOption.getAttribute('data-team-name');
+                
+                if (teamId && teamName) {
+                    const option = document.createElement('option');
+                    option.value = teamId;
+                    option.textContent = teamName;
+                    teamSelect.appendChild(option);
                     teamSelect.disabled = false;
                 }
+                
+                checkFormValidity();
             });
 
             function checkFormValidity() {
-                const project = document.getElementById('project_id').value;
-                const team = document.getElementById('team_id').value;
+                const project = projectSelect.value;
+                const team = teamSelect.value;
                 const sessionName = document.getElementById('session_name').value.trim();
                 const cardCheckboxes = document.querySelectorAll('.card-checkbox:checked');
                 const btn = document.getElementById('create-session-btn');
                 btn.disabled = !(project && team && sessionName && cardCheckboxes.length > 0);
             }
-            document.getElementById('project_id').addEventListener('change', checkFormValidity);
-            document.getElementById('team_id').addEventListener('change', checkFormValidity);
+
+            // Add event listeners for form validation
+            projectSelect.addEventListener('change', checkFormValidity);
+            teamSelect.addEventListener('change', checkFormValidity);
             document.getElementById('session_name').addEventListener('input', checkFormValidity);
             document.querySelectorAll('.card-checkbox').forEach(function(cb) {
                 cb.addEventListener('change', checkFormValidity);
             });
+
+            // Initial form validation
             checkFormValidity();
         });
     </script>

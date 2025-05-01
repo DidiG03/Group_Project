@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+{% load project_filters %}
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team Health Session Summary | HealthCheck</title>
+    <style>
+        /* Base Styles */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+        }
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        /* Sidebar Styles */
+        .sidebar {
+            width: 240px;
+            background-color: #4B0D5A;
+            padding: 20px 0;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #2c3e50;
+            transition: all 0.3s ease;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            position: relative;
+            overflow-y: auto;
+        }
+        .sidebar.collapsed {
+            width: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        .sidebar-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        .sidebar-button {
+            background-color: transparent;
+            color: #e2e8f0;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 15px;
+            text-align: left;
+            cursor: pointer;
+            font-size: 15px;
+            width: 100%;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            line-height: 1.2;
+        }
+        .sidebar-button:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            transform: translateX(3px);
+        }
+        .sidebar-button::before {
+            content: "";
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            margin-right: 10px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            opacity: 0.8;
+        }
+        .active-button {
+            background-color: rgba(255, 255, 255, 0.15);
+            color: #ffffff;
+            font-weight: 500;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .active-button::before {
+            opacity: 1 !important;
+        }
+        .logout-button {
+            background-color: rgba(239, 68, 68, 0.2);
+            color: #fecaca;
+            margin-top: auto;
+            width: calc(100% - 30px);
+            margin-left: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            padding: 12px 15px;
+            transition: all 0.2s ease;
+        }
+        .logout-button:hover {
+            background-color: rgba(239, 68, 68, 0.3);
+        }
+        .app-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 15px 20px;
+            color: white;
+            font-size: 22px;
+            font-weight: bold;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 10px;
+        }
+        .app-logo span {
+            color: #3b82f6;
+        }
+        
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+        }
+        .menu-icon {
+            color: #2196F3;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .username-display {
+            font-size: 16px;
+            color: #333;
+        }
+        .user-role {
+            font-size: 14px;
+            color: #666;
+            background-color: #f0f0f0;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+        
+        /* Summary content styles */
+        .summary-container {
+            max-width: 1000px;
+            margin: 20px auto;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            padding: 32px;
+        }
+        .session-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #1e293b;
+        }
+        .meta {
+            color: #64748b;
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 32px;
+        }
+        .summary-table th, .summary-table td {
+            border: 1px solid #e5e7eb;
+            padding: 10px;
+            text-align: left;
+        }
+        .summary-table th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: #475569;
+        }
+        .summary-table tr:hover {
+            background-color: #f8fafc;
+        }
+        .votes-breakdown {
+            margin-bottom: 32px;
+        }
+        .votes-bar {
+            height: 18px;
+            border-radius: 6px;
+            background: #e5e7eb;
+            margin: 6px 0;
+            position: relative;
+        }
+        .votes-bar-inner {
+            height: 100%;
+            border-radius: 6px;
+        }
+        .votes-pro {
+            background: #10b981;
+        }
+        .votes-notpro {
+            background: #ef4444;
+        }
+        .votes-abstain {
+            background: #f59e0b;
+        }
+        .votes-other {
+            background: #6366f1;
+        }
+        .archive-btn {
+            background-color: #4B0D5A;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background-color 0.2s;
+        }
+        .archive-btn:hover {
+            background-color: #5c1b6e;
+        }
+        .archive-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .archived-label {
+            color: #b91c1c;
+            font-weight: bold;
+            margin-left: 16px;
+            padding: 4px 8px;
+            background-color: #fee2e2;
+            border-radius: 4px;
+        }
+        .active-label {
+            color: #166534;
+            font-weight: bold;
+            padding: 4px 8px;
+            background-color: #dcfce7;
+            border-radius: 4px;
+        }
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #1e293b;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 8px;
+        }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #4B0D5A;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        .logo {
+            display: block;
+            max-width: 80px;
+            height: auto;
+            margin: 0 auto;
+        }
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                z-index: 100;
+            }
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+            }
+            .summary-container {
+                padding: 20px;
+            }
+            .summary-table {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <img src="{% static 'images/Sky_Group_logo_2020.svg.png' %}" alt="Company Logo" class="logo">
+            {% if user.profile.role == 'senior_manager' %}
+            <div class="app-logo">
+                Health<span>Check</span>Admin
+            </div>
+            {% else %}
+            <div class="app-logo">
+                Health<span>Check</span>
+            </div>
+            {% endif %}
+            <div class="sidebar-buttons">
+                {% if user.profile.role == 'senior_manager' %}
+                    <a href="{% url 'admin_dashboard' %}" style="text-decoration: none; width: 100%;">
+                        <button class="sidebar-button">Admin Dashboard</button>
+                    </a>
+                    <a href="{% url 'admin_projects' %}" style="text-decoration: none; width: 100%;">
+                        <button class="sidebar-button">Project Management</button>
+                    </a>
+                    <a href="{% url 'team_selection' %}" style="text-decoration: none; width: 100%;">
+                        <button class="sidebar-button active-button">Team Health Checks</button>
+                    </a>
+                {% else %}
+                    <a href="{% url 'dashboard' %}" style="text-decoration: none; width: 100%;">
+                        <button class="sidebar-button">Dashboard</button>
+                    </a>
+                    <a href="{% url 'team_selection' %}" style="text-decoration: none; width: 100%;">
+                        <button class="sidebar-button active-button">Team Health Checks</button>
+                    </a>
+                    <a href="{% url 'project_health' %}" style="text-decoration: none; width: 100%;">
+                        <button class="sidebar-button">Project Health</button>
+                    </a>
+                {% endif %}
+
+                <a href="{% url 'settings' %}" style="text-decoration: none; width: 100%;">
+                    <button class="sidebar-button">Settings</button>
+                </a>
+            </div>
+            <a href="{% url 'logout' %}" style="text-decoration: none; margin-top: auto; display: block;" id="logout-link">
+                <button class="sidebar-button logout-button">Log Out</button>
+            </a>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Header -->
+            <div class="header">
+                <div class="header-left">
+                    <span class="menu-icon" id="toggle-sidebar">≡</span>
+                </div>
+                <div class="header-right">
+                    <div class="user-info">
+                        <span class="username-display">Welcome, 
+                            {% if user.first_name %}
+                                {{ user.first_name }} {{ user.last_name }}
+                            {% else %}
+                                {{ username }}
+                            {% endif %}
+                        </span>
+                        <span class="user-role">
+                            {% if user.profile.role == 'senior_manager' %}
+                                Senior Manager
+                            {% elif user.profile.is_department_lead %}
+                                Department Lead
+                            {% elif user.profile.is_team_leader %}
+                                Team Leader
+                            {% else %}
+                                Member
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Summary Content -->
+            <div class="summary-container">
+                <a href="{% url 'team_selection' %}" class="back-link">← Back to Teams</a>
+                
+                <h1 class="session-title">{{ session.name }}</h1>
+                <div class="meta">
+                    <strong>Team:</strong> {{ session.team.name }}<br>
+                    <strong>Created by:</strong> {{ session.created_by.get_full_name|default:session.created_by.username }}<br>
+                    <strong>Date:</strong> {{ session.created_at|date:"M d, Y H:i" }}<br>
+                    <strong>Status:</strong> 
+                    {% if not session.is_active %}
+                        <span class="archived-label">Archived</span>
+                    {% else %}
+                        <span class="active-label">Active</span>
+                    {% endif %}
+                </div>
+                
+                <div class="votes-breakdown">
+                    <h2 class="section-title">Votes Breakdown</h2>
+                    <table class="summary-table">
+                        <tr>
+                            <th>Card</th>
+                            <th>Pro</th>
+                            <th>Not Pro</th>
+                            <th>Abstain</th>
+                            <th>Total Votes</th>
+                        </tr>
+                        {% for card in session.cards.all %}
+                        <tr>
+                            <td>{{ card.title }}</td>
+                            <td>{{ vote_stats|get_item:card.id|get_item:'pro'|default:0 }}</td>
+                            <td>{{ vote_stats|get_item:card.id|get_item:'notpro'|default:0 }}</td>
+                            <td>{{ vote_stats|get_item:card.id|get_item:'abstain'|default:0 }}</td>
+                            <td>{{ vote_stats|get_item:card.id|get_item:'total'|default:0 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </table>
+                </div>
+                
+                <div>
+                    <h2 class="section-title">Who Voted</h2>
+                    <table class="summary-table">
+                        <tr>
+                            <th>User</th>
+                            <th>Card</th>
+                            <th>Vote</th>
+                            <th>Comment</th>
+                        </tr>
+                        {% for vote in votes %}
+                        <tr>
+                            <td>{{ vote.user.get_full_name|default:vote.user.username }}</td>
+                            <td>{{ vote.card.title }}</td>
+                            <td>
+                                {% if vote.score == 1 %}Very Poor
+                                {% elif vote.score == 2 %}Poor
+                                {% elif vote.score == 3 %}Neutral
+                                {% elif vote.score == 4 %}Good
+                                {% elif vote.score == 5 %}Excellent
+                                {% else %}{{ vote.score }}
+                                {% endif %}
+                            </td>
+                            <td>{{ vote.comment|default:'-' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </table>
+                </div>
+                
+                {% if can_archive and session.is_active %}
+                <form method="post" style="margin-top: 24px;">
+                    {% csrf_token %}
+                    <button type="submit" name="archive" value="1" class="archive-btn">End Session & Archive</button>
+                </form>
+                {% elif not session.is_active %}
+                <div style="margin-top: 20px; font-style: italic; color: #64748b;">
+                    This session is archived and no more votes can be submitted.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Toggle sidebar
+            const toggleBtn = document.getElementById('toggle-sidebar');
+            const sidebar = document.getElementById('sidebar');
+            
+            if (toggleBtn && sidebar) {
+                toggleBtn.addEventListener('click', () => {
+                    sidebar.classList.toggle('collapsed');
+                });
+            }
+        });
+    </script>
+</body>
+</html> 
